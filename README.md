@@ -17,3 +17,6 @@ Tools required to run code
 Python(x,y) or equivalent
 
 Assignments
+-----------
+
+[Assignment 1](http://bit.ly/selimb_HW1_mech530)
