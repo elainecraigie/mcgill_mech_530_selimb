@@ -1,4 +1,4 @@
-mcgill_mech_530_selimb
+McGill MECH 530
 ======================
 
 Project in MECH-530 (Mechanics of Composite Materials) at McGill University
