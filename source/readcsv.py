@@ -14,19 +14,6 @@ units_dict = {
 'h0': 'mm',
 'nuy': '-'
 }
-#DONT THINK I NEED THIS
-# class CsvDict(dict):
-# 	"""dot.notation access to dictionary attributes"""
-
-# 	# def __init__(self, materialID,file_name):
-# 	# 	ret = readcsv(materialID,file_name)
-# 	# 	self.headers = ret.pop('headers') #A list
-# 	# 	self.rows = ret #A dictiona
-# 	def __getattr__(self, attr):
-# 		return self.get(attr)
-#   __setattr__= dict.__setitem__
-#   __delattr__= dict.__delitem__
-
 def makeint(my_dict):
 	for key, value in my_dict.iteritems():
 		try:
