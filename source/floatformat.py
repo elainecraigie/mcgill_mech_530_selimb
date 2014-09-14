@@ -19,11 +19,11 @@ def floatformat(num, tot_length = 9, precision = 3):
 
 	###############################################################
 	#ALWAYS USE ENGINEERING WITH INPUT PRECISION###################
-	engineering = False
+	engineering = True
 	if engineering:
 		if num == 0.0 :
 			return ' '*(tot_length-3)+'0.0'
-		return "*.*e" % (tot_length, precision, float(num))
+		return "%*.*e" % (tot_length, precision, float(num))
 	###############################################################
 
 	left,right = str(num).split('.')
