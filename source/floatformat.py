@@ -1,6 +1,6 @@
 import math
 # import re
-def floatformat(num, tot_length = 9, precision = 3):
+def floatformat(num, tot_length = 10, precision = 3):
 	"""Documentation required.
 
 	Default total string length = 10 because that's sufficient for printing
