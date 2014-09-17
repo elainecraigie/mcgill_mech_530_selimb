@@ -33,7 +33,11 @@ def readcsv(materialID,file_name):
 	Dict also contains key 'headers' which contains headers in csv-order -- 
 	useful if you want to print contents in order.
 
-	***Also computes nuy"""
+	***Also computes nuy.
+
+	Note: .csv must be in same folder as readcsv (for now)."""
+	import os
+	import sys
 	material_found = False
 	# try:
 	#   import sys
@@ -41,8 +45,9 @@ def readcsv(materialID,file_name):
 	# except IndexError:
 	# 	print "You must specify a material ID as first and only command-line argument"
 	# 	sys.exit(1)
-
-	with open(file_name,'r') as f:
+	csv_dir = os.path.dirname(os.path.abspath(__file__))
+	file_path = csv_dir+'\\'+file_name
+	with open(file_path,'r') as f:
 		import csv
 		reader = csv.DictReader(f)
 		headers = reader.fieldnames

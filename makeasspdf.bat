@@ -9,9 +9,9 @@ set assnum=%str:~-1%
 echo %assnum%
 ipython nbconvert --to html %1
 set notebookfile=notebook_%assnum%
-wkhtmltopdf --image-quality 300 %str%.html tex_pdf/%notebookfile%.pdf
+wkhtmltopdf --image-quality 300 %str%.html docs/%notebookfile%.pdf
 del %str%.html
-cd tex_pdf
+cd docs
 set /P thedate=Enter due date without year.
 set titlefile=titlepage_%assnum%
 PAUSE
