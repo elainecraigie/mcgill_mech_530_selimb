@@ -16,12 +16,18 @@ class Layer(object):
 										'Q_off':'GPa',
 										'S_on':'1/GPa',
 										'S_off':'1/GPa'}
-		self.q_on_found = False; self.s_on_found = False;
-		self.q_off_found = False; self.s_off_found = False;
-		self.getQ_on()
-		self.getQ_off()
-		self.getS_on()
-		self.getS_off()
+		self.Q_on_found = False; self.S_on_found = False;
+		self.Q_off_found = False; self.S_off_found = False;
+
+	def compute_all(self,force = False):
+		if not self.Q_on_found or force:
+			self.getQ_on()
+		if not self.Q_off_found or force:	
+			self.getQ_off()
+		if not self.S_on_found or force:		
+			self.getS_on()
+		if not self.S_off_found or force:
+			self.getS_off()
 		
 	def print_param(self, mode = 'w'):
 		"""Print material properties and geometry parameters."""
@@ -53,58 +59,39 @@ class Layer(object):
 		numpy.set_printoptions(formatter = {'float_kind':floatformat.floatformat}, suppress = True)
 		title = "{0:s} [{1:s}] : "
 		for array_name in array_names:
-			try:
-				array = getattr(self,array_name)
-			except AttributeError:
-				print """***
-				No array '%s' defined for Layer object.
-				***""" % array_name
-				raise
+			if not getattr(self,array_name+'_found'):
+				raise AssertionError("Array %s has not been computed yet" % array_name)
 
+			array = getattr(self,array_name)
 			print title.format(array_name,self.units_dict[array_name])
 			print array
 
 
-	def set_array(self,input_names,input_array_list):
+	def set(self,input_dict):
 		"""Assign matrix to layer
-		Arguments:
-		the_name : name of the matrix/matrices
-			Possible valid inputs:
-				-QS
-				-Q_on
-				-offQS
-		the_matrix: LIST of numpy arrays. 
-								number of matrices must match number of names
-
-		*Mixed requests are not supported, 
-		e.g. Q_on and S_off
+		Argument must be a dict.
+			-Keys must be something like Q_on, S_off, QSon, QS
+			-Values are numpy arrays. If a key with multiple request is provided, an
+			equal amount of arrays must be provided (as list)
 		"""
-		import sys
-		#matrix_names is a tuple (method name, unit, array name)
-		assert(type(input_array_list)==list)
-		array_names = self._parse_request(input_names)
-		if (len(array_names) != len(input_array_list)):
-			print "-----------------------------------"
-			print "Matrices to be set : %s" % array_names[:]
-			print "Do not match number of arrays given : %d" % (len(input_array_list))
-			print "-----------------------------------"
-			raise AssertionError
-		else:
-			pass
-
-		global do_debug
-		if do_debug:
-			print "All array names : ", array_names
-			print "All input arrays : ", input_array_list
+		do_debug = True
+		for a_key,an_array in input_dict.iteritems():
+			array_names = self._parse_request(a_key)
+			if len(array_names)==1:
+				array_name=array_names[0]
+			else:
+				raise AssertionError("""Key %s provides more than one array name %s
+					""" % (a_key,array_names))
 			
-		for n in range(len(array_names)):
-			array_name = array_names[n]
-			array = input_array_list[n]
-			assert(type(array)==numpy.ndarray)
+			assert(type(an_array)==numpy.ndarray)
+			setattr(self,array_name,an_array)
+			setattr(self,array_name+'_found',True)
 			if do_debug:
-				print "Array_name : ", array_name
-				print "Input array : ", array
-			setattr(self,array_name,array)
+				print "Array names : ", array_name
+				print "Input array : ", an_array
+				print "set to found : %s" % array_name+'_found'
+
+
 
 	def getQ_on(self):
 		"""Return on-axis Q matrix."""
@@ -118,7 +105,7 @@ class Layer(object):
 		self._q_on = q
 		Q_on = self._make_on_array(q)
 		self.Q_on = Q_on 
-		self.q_on_found = True
+		self.Q_on_found = True
 		return Q_on
 
 	def getS_on(self):
@@ -132,12 +119,12 @@ class Layer(object):
 		self._s_on = s
 		S_on = self._make_on_array(s)
 		self.S_on = S_on
-		self.s_on_found = True
+		self.S_on_found = True
 		return S_on
 
 	def getQ_off(self):
 		"""Return off-axis Q matrix"""
-		assert(self.q_on_found)
+		assert(self.Q_on_found)
 		u = self._get_u(self._q_on)
 		A = self._get_A(u)
 		b = numpy.array([[1],[u[1]],[u[2]]])
@@ -145,12 +132,13 @@ class Layer(object):
 		# 11,22,12,66,16,26
 		self._q_off = q_off
 		self.Q_off = self._make_off_array(q_off)
+		self.Q_off_found = True
 		return self.Q_off
 
 	def getS_off(self):
 
 		"""Return off-axis S matrix"""
-		assert(self.s_on_found)
+		assert(self.S_on_found)
 		u = self._get_u(self._s_on)
 		A = self._get_A(u)
 		b = numpy.array([[1],[u[1]],[u[2]]])
@@ -158,6 +146,7 @@ class Layer(object):
 		# print q_off
 		self._s_off = s_off
 		self.S_off = self._make_off_array(s_off)
+		self.S_off_found = True
 		return self.S_off
 
 	
@@ -167,10 +156,15 @@ class Layer(object):
 		"""
 		prefix_list = ['S','Q']; suffix_list = ['on','off']
 		the_prefix = []; the_suffix = []
+		prefix_found = False
 		#Parse the input string to account for variations
 		for a_prefix in prefix_list:
 			if a_prefix in the_name:
 				the_prefix.append(a_prefix)
+				prefix_found = True
+
+		if not prefix_found:
+			raise AssertionError("Could not parse %s request" % the_name)
 
 		sufix_found = False
 		for a_suffix in suffix_list:
