@@ -1,69 +1,75 @@
 #TODO : Implement z_core
 
-import parselayup
+from parsetools import parse_layup, parse_request
 import layer
 
 class Laminate(object):
-	"""Laminate(layup, materialID) -> Laminate composed of layers
-				with various orientations but the same material properties. 
+	"""Laminate(layup, materialID, compute = <method>) -> Laminate 
+composed of layers with various orientations but the same material properties. 
+
+Arguments:
+	-layup : layup as a string. See parselayup.py
+	-materialID : ID of the wanted material
+	-compute = 'dumb' or 'smart'. Smart uses symmetry if possible.
 	"""
-	def __init__(self, layup, materialID):
-		self.layup = parselayup.parse_layup(layup)
+	def __init__(self, layup, materialID, compute = None):
+		self.layup, self.symmetric = parse_layup(layup)
 		self.layers = [] 
 		for orientation in self.layup:
-			self.layers.append(layer.Layer(materialID,orientation))
+			new_layer = layer.Layer(materialID,orientation)
+			self.layers.append(new_layer)
+		if compute is not None:
+			self.compute_all()
 
-	def print_param(self, ply_number = None, output_file = None, mode = None):
-		index = 0
-		if ply_number is not None:
-			if int(ply_number) >= len(self.layers):
-				raise IndexError, """%d is bigger than the number of plies : %d""" % (
-								int(ply_number), len(self.layers)) 
+		self.total_thickness = len(self.layup)*self.layers[0].PROPS['h0']
+
+	def compute_all(self, method = 'dumb'):
+		"""method takes 'dumb' or 'smart'
+		Dumb method merely calls compute_all() on all layers
+		Smart method :
+			-Computes Q_on, S_on only once and assigns it all other layers
+			-If symmetric, only computes Q_off, S_off for half the layers.
+		""" 
+		if method is 'dumb':
+			for layer in self.layers:
+				layer.compute_all()
+
+		elif method is 'smart':
+			if self.symmetric:
+				length = len(self.layers)/2
 			else:
-				index = int(ply_number)
+				length = len(self.layers)
+			#Compute_all for the first layer
 
-		if mode is not None:
-			self.layers[index].print_param(file = output_file, mode = mode)
+			for layer in self.layers[:length]:
+				pass
+				
+			
+
 		else:
-			self.layers[index].print_param(file = output_file)
+			raise AssertionError("Method %s is not defined" % method)
 
-	def print_all_param(self, output_file = None):
-		for ply in range(0,len(self.layers)):
-			self.print_param(ply_number = ply, output_file = output_file, mode = 'a')
+	def print_param(self):
+		self.layers[0].print_param()
 
-	def getQ_on(self):
-		old = None
-		for layer in self.layers:
-			new = layer.getQ_on()
-			if old is not None:
-				assert (new.all() == old.all())
-				old = new
-			else:
-				old = new
-
-	def get_orientation(self):
+	def print_orientation(self):
 		str_layup_1 = "%s" % self.layup
 		title = "Orientation [degrees] : \n"
 		print title + str_layup_1
 
-		#Assert self.layup against individual orientation of layers in laminate
-		#Ensures order is correct.
-		list_layup_2 = []
-		for layer in self.layers:
-			list_layup_2.append(layer.theta)
-		str_layup_2 = "%s" % list_layup_2
-		assert(str_layup_1 == str_layup_2)
+	def print_array(self,names):
+		pass
 
-
+	# def 
 
 if __name__ == "__main__":
 	my_laminate = Laminate('90_2/p40/p20/0s',2)
 	# print my_laminate.layup
 	# my_laminate.print_param()
-	my_laminate.print_all_param('testinput.txt')
-	# my_laminate.print_param(5)
-	my_laminate.get_orientation()
-	my_laminate.getQ_on()
+	# my_laminate.print_all_param('testinput.txt')
+	# # my_laminate.print_param(5)
+	# my_laminate.get_orientation()
+	# my_laminate.getQ_on()
 
 
 						

@@ -3,6 +3,7 @@ import math
 import numpy
 import floatformat
 from scipy import linalg as scilin
+from parsetools import parse_request
 
 global do_debug
 do_debug = False
@@ -20,21 +21,54 @@ class Layer(object):
 		self.Q_off_found = False; self.S_off_found = False;
 
 	def compute_all(self,force = False):
+		"""Takes into account which arrays have already been marked as found, 
+		unless 'force' parameter is set to True.
+		"""
+		modified=[]
 		if not self.Q_on_found or force:
 			self.getQ_on()
+			modified.append('Q_on')
 		if not self.Q_off_found or force:	
 			self.getQ_off()
+			modified.append('Q_off')
 		if not self.S_on_found or force:		
 			self.getS_on()
+			modified.append('S_on')
 		if not self.S_off_found or force:
 			self.getS_off()
+			modified.append('S_off')
 		
-	def print_param(self, mode = 'w'):
-		"""Print material properties and geometry parameters."""
-		if mode == 'a':
-			the_separator = '--' * 10 + '\n' + '--' * 10 + '\n'
+		if modified == []:
+			return None
 		else:
-			the_separator = ''
+			return modified
+		
+	def is_found(self):
+		"""Returns True if all matrices have been marked as found.
+		Else, returns the names of the matrices that are still not found.
+		"""
+		all_found = True
+		missing = []
+		if not self.Q_on_found:
+			all_found = False
+			missing.append('Q_on')
+		if not self.Q_off_found:
+			all_found = False
+			missing.append('Q_off')
+		if not self.S_on_found:
+			all_found = False
+			missing.append('S_on')
+		if not self.S_off_found:
+			all_found = False
+			missing.append('S_off')
+		if all_found:
+			return True
+		else:
+			return missing
+
+	def print_param(self):
+		"""Print material properties and geometry parameters."""
+		the_separator = '--' * 10 + '\n' + '--' * 10 + '\n'
 
 		for i in readcsv.iter_csvdict(self.PROPS):
 			print "%r" % i
@@ -51,7 +85,7 @@ class Layer(object):
 		*Mixed requests are not supported, 
 		e.g. Q_on and S_off
 		"""
-		array_names = self._parse_request(the_names)
+		array_names = parse_request(the_names)
 		multiple = True if len(array_names) > 1 else False
 		# mag = lambda num: abs(math.log10(abs(float(num))))
 		# engineering_formatter = lambda x: "%10.3e" % x if mag(x) >= 3 else "%10.3f" % x
@@ -66,7 +100,6 @@ class Layer(object):
 			print title.format(array_name,self.units_dict[array_name])
 			print array
 
-
 	def set(self,input_dict):
 		"""Assign matrix to layer
 		Argument must be a dict.
@@ -76,7 +109,7 @@ class Layer(object):
 		"""
 		do_debug = True
 		for a_key,an_array in input_dict.iteritems():
-			array_names = self._parse_request(a_key)
+			array_names = parse_request(a_key)
 			if len(array_names)==1:
 				array_name=array_names[0]
 			else:
@@ -90,8 +123,6 @@ class Layer(object):
 				print "Array names : ", array_name
 				print "Input array : ", an_array
 				print "set to found : %s" % array_name+'_found'
-
-
 
 	def getQ_on(self):
 		"""Return on-axis Q matrix."""
@@ -125,7 +156,7 @@ class Layer(object):
 	def getQ_off(self):
 		"""Return off-axis Q matrix"""
 		assert(self.Q_on_found)
-		u = self._get_u(self._q_on)
+		u = self._get_u('Q')
 		A = self._get_A(u)
 		b = numpy.array([[1],[u[1]],[u[2]]])
 		q_off = A.dot(b)
@@ -139,7 +170,7 @@ class Layer(object):
 
 		"""Return off-axis S matrix"""
 		assert(self.S_on_found)
-		u = self._get_u(self._s_on)
+		u = self._get_u('S')
 		A = self._get_A(u)
 		b = numpy.array([[1],[u[1]],[u[2]]])
 		s_off = A.dot(b)
@@ -149,39 +180,38 @@ class Layer(object):
 		self.S_off_found = True
 		return self.S_off
 
-	
-	def _parse_request(self,the_name):
-		"""Used to parse request of arrays to be printed/modified/obtained.
-		Returns a list of array_names.
-		"""
-		prefix_list = ['S','Q']; suffix_list = ['on','off']
-		the_prefix = []; the_suffix = []
-		prefix_found = False
-		#Parse the input string to account for variations
-		for a_prefix in prefix_list:
-			if a_prefix in the_name:
-				the_prefix.append(a_prefix)
-				prefix_found = True
+	# def _parse_request(self,the_name):
+	# 	"""Used to parse request of arrays to be printed/modified/obtained.
+	# 	Returns a list of array_names.
+	# 	"""
+	# 	prefix_list = ['S','Q']; suffix_list = ['on','off']
+	# 	the_prefix = []; the_suffix = []
+	# 	prefix_found = False
+	# 	#Parse the input string to account for variations
+	# 	for a_prefix in prefix_list:
+	# 		if a_prefix in the_name:
+	# 			the_prefix.append(a_prefix)
+	# 			prefix_found = True
 
-		if not prefix_found:
-			raise AssertionError("Could not parse %s request" % the_name)
+	# 	if not prefix_found:
+	# 		raise AssertionError("Could not parse %s request" % the_name)
 
-		sufix_found = False
-		for a_suffix in suffix_list:
-			if a_suffix in the_name:
-				sufix_found = True
-				the_suffix.append(a_suffix)
-		#If neither 'on' or 'off' was found, assume user wants both.
-		if not sufix_found:
-			the_suffix= suffix_list
+	# 	sufix_found = False
+	# 	for a_suffix in suffix_list:
+	# 		if a_suffix in the_name:
+	# 			sufix_found = True
+	# 			the_suffix.append(a_suffix)
+	# 	#If neither 'on' or 'off' was found, assume user wants both.
+	# 	if not sufix_found:
+	# 		the_suffix= suffix_list
 
-		method_list = []
-		for a_prefix in the_prefix:
-			for a_suffix in the_suffix:
-				array_name = '%s_%s' % (a_prefix,a_suffix)
-				method_list.append(array_name)
+	# 	array_list = []
+	# 	for a_prefix in the_prefix:
+	# 		for a_suffix in the_suffix:
+	# 			array_name = '%s_%s' % (a_prefix,a_suffix)
+	# 			array_list.append(array_name)
 
-		return method_list
+	# 	return array_list
 
 	def _make_on_array(self, the_dict):
 		"""make_array(dict containing Aij) -> numpy array(3,3)
@@ -216,20 +246,28 @@ class Layer(object):
 		arr[2,:] = a[4],a[5],a[3]
 		return arr
 
-	def _get_u(self,q_or_s):
+	def _get_u(self,array_prefix):
 		"""Expects dictionary q or s with keys:
-		xx, xy, yy, ss"""
-		#For conciseness
-		do_debug = False
-		q = q_or_s
-		u=[]
-		u1 = (3*q['xx'] + 3*q['yy'] + 2*q['xy'] + 4*q['ss'])/8.0
-		u2 = (q['xx'] - q['yy'])/2.0
-		u3 = (q['xx'] + q['yy'] - 2*q['xy'] - 4*q['ss'])/8.0
-		u4 = (q['xx'] + q['yy'] + 6*q['xy'] - 4*q['ss'])/8.0
-		u5 = (q['xx'] + q['yy'] - 2*q['xy'] + 4*q['ss'])/8.0
+		xx, xy, yy, ss
+		"""
+		do_debug = True
+		if array_prefix == 'Q':
+			A = self.Q_on 
+		elif array_prefix == 'S':
+			A = self.S_on
+		else:
+			raise AssertionError("""Must call _get_u with 'Q' or 'S', not %s
+													""" % array_prefix)
+		u = []
+		u1 = (3.0*A[0,0] + 3.0*A[1,1] + 2.0*A[0,1] + 4.0*A[2,2])/8.0
+		u2 = (A[0,0] - A[1,1])/2.0
+		u3 = (A[0,0] + A[1,1] - 2.0*A[0,1] - 4.0*A[2,2])/8.0
+		u4 = (A[0,0] + A[1,1] + 6.0*A[0,1] - 4.0*A[2,2])/8.0
+		u5 = (A[0,0] + A[1,1] - 2.0*A[0,1] + 4.0*A[2,2])/8.0
 		u = [u1, u2, u3, u4, u5]
+
 		if do_debug:
+			print "A : ", A
 			print "u : ", u
 		return u
 
@@ -248,7 +286,8 @@ class Layer(object):
 		return A
 
 if __name__ == "__main__":
-	print "Nothing here yet."
+	my_layer = Layer(2,45)
+	my_layer.compute_all()
 	
 				
 

@@ -49,7 +49,41 @@ def parse_layup(layup_input):
 	if symmetric:
 		orientation.extend(orientation[::-1])
 
-	return orientation
+	return orientation, symmetric
+
+def parse_request(the_string):
+	"""Used to parse request of arrays to be printed/modified/obtained.
+	Returns a list of array_names.
+	"""
+	prefix_list = ['S','Q']; suffix_list = ['on','off']
+	the_prefix = []; the_suffix = []
+	prefix_found = False
+	#Parse the input string to account for variations
+	for a_prefix in prefix_list:
+		if a_prefix in the_string:
+			the_prefix.append(a_prefix)
+			prefix_found = True
+
+	if not prefix_found:
+		raise AssertionError("Could not parse %s request" % the_string)
+
+	sufix_found = False
+	for a_suffix in suffix_list:
+		if a_suffix in the_string:
+			sufix_found = True
+			the_suffix.append(a_suffix)
+	#If neither 'on' or 'off' was found, assume user wants both.
+	if not sufix_found:
+		the_suffix= suffix_list
+
+	array_list = []
+	for a_prefix in the_prefix:
+		for a_suffix in the_suffix:
+			array_name = '%s_%s' % (a_prefix,a_suffix)
+			array_list.append(array_name)
+
+	return array_list
+
 
 if __name__ == "__main__":
 	the_layup = parse_layup('90_2/p40/p20/0s')
