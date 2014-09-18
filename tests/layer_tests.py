@@ -82,7 +82,7 @@ def test_u_values_2():
 	global my_layer
 	u1 = 59.66; u2=64.90; u3=14.25; u4=16.96; u5=21.35;
 	udesired = [u1,u2,u3,u4,u5]
-	uactual = my_layer._get_u('Q')
+	uactual = my_layer._compute_u('Q')
 	assert(len(udesired) == len(uactual))
 	for i in range(len(udesired)):
 		delta_abs = (udesired[i]-uactual[i])
@@ -100,7 +100,7 @@ def test_u_values_1():
 	my_layer.compute_all()
 	u1 = 76.37; u2=85.73; u3=19.71; u4=22.61; u5=26.88;
 	udesired = [u1,u2,u3,u4,u5]
-	uactual = my_layer._get_u('Q')
+	uactual = my_layer._compute_u('Q')
 	assert(len(udesired) == len(uactual))
 	for i in range(len(udesired)):
 		# print udesired[i]

@@ -26,16 +26,16 @@ class Layer(object):
 		"""
 		modified=[]
 		if not self.Q_on_found or force:
-			self.getQ_on()
+			self.computeQ_on()
 			modified.append('Q_on')
 		if not self.Q_off_found or force:	
-			self.getQ_off()
+			self.computeQ_off()
 			modified.append('Q_off')
 		if not self.S_on_found or force:		
-			self.getS_on()
+			self.computeS_on()
 			modified.append('S_on')
 		if not self.S_off_found or force:
-			self.getS_off()
+			self.computeS_off()
 			modified.append('S_off')
 		
 		if modified == []:
@@ -123,7 +123,7 @@ class Layer(object):
 				print "Input array : ", an_array
 				print "set to found : %s" % array_name+'_found'
 
-	def getQ_on(self):
+	def computeQ_on(self):
 		"""Return on-axis Q matrix."""
 		m = pow(1-self.PROPS['nux']*self.PROPS['nuy'],-1)
 		q={}
@@ -138,7 +138,7 @@ class Layer(object):
 		self.Q_on_found = True
 		return Q_on
 
-	def getS_on(self):
+	def computeS_on(self):
 		"""Return on-axis S matrix"""
 		s = {}
 		s['xx'] = 1/self.PROPS['ex']
@@ -152,11 +152,11 @@ class Layer(object):
 		self.S_on_found = True
 		return S_on
 
-	def getQ_off(self):
+	def computeQ_off(self):
 		"""Return off-axis Q matrix"""
 		assert(self.Q_on_found)
-		u = self._get_u('Q')
-		A = self._get_A(u)
+		u = self._compute_u('Q')
+		A = self._compute_A(u)
 		b = numpy.array([[1],[u[1]],[u[2]]])
 		q_off = A.dot(b)
 		# 11,22,12,66,16,26
@@ -165,12 +165,12 @@ class Layer(object):
 		self.Q_off_found = True
 		return self.Q_off
 
-	def getS_off(self):
+	def computeS_off(self):
 
 		"""Return off-axis S matrix"""
 		assert(self.S_on_found)
-		u = self._get_u('S')
-		A = self._get_A(u)
+		u = self._compute_u('S')
+		A = self._compute_A(u)
 		b = numpy.array([[1],[u[1]],[u[2]]])
 		s_off = A.dot(b)
 		# print q_off
@@ -245,7 +245,7 @@ class Layer(object):
 		arr[2,:] = a[4],a[5],a[3]
 		return arr
 
-	def _get_u(self,array_prefix):
+	def _compute_u(self,array_prefix):
 		"""Expects dictionary q or s with keys:
 		xx, xy, yy, ss
 		"""
@@ -255,7 +255,7 @@ class Layer(object):
 		elif array_prefix == 'S':
 			A = self.S_on
 		else:
-			raise AssertionError("""Must call _get_u with 'Q' or 'S', not %s
+			raise AssertionError("""Must call _compute_u with 'Q' or 'S', not %s
 													""" % array_prefix)
 		u = []
 		u1 = (3.0*A[0,0] + 3.0*A[1,1] + 2.0*A[0,1] + 4.0*A[2,2])/8.0
@@ -270,7 +270,7 @@ class Layer(object):
 			print "u : ", u
 		return u
 
-	def _get_A(self,u):
+	def _compute_A(self,u):
 		"""I call "A" the matrix that multiples [1,u2,u3] to obtain the S or Q
 		vector"""
 		from math import cos,sin,radians
