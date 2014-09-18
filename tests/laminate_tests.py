@@ -76,7 +76,7 @@ def test_smart_q_s_on_uniform():
 		assert(layer.Q_on.all() == Q_on_0.all())
 		assert(layer.S_on.all() == S_on_0.all())
 
-def 
+# def 
 
 
 
