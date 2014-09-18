@@ -86,7 +86,6 @@ class Layer(object):
 		e.g. Q_on and S_off
 		"""
 		array_names = parse_request(the_names)
-		multiple = True if len(array_names) > 1 else False
 		# mag = lambda num: abs(math.log10(abs(float(num))))
 		# engineering_formatter = lambda x: "%10.3e" % x if mag(x) >= 3 else "%10.3f" % x
 		# print engineering_formatter(float(4.6))
@@ -107,7 +106,7 @@ class Layer(object):
 			-Values are numpy arrays. If a key with multiple request is provided, an
 			equal amount of arrays must be provided (as list)
 		"""
-		do_debug = True
+		do_debug = False
 		for a_key,an_array in input_dict.iteritems():
 			array_names = parse_request(a_key)
 			if len(array_names)==1:
@@ -250,7 +249,7 @@ class Layer(object):
 		"""Expects dictionary q or s with keys:
 		xx, xy, yy, ss
 		"""
-		do_debug = True
+		do_debug = False
 		if array_prefix == 'Q':
 			A = self.Q_on 
 		elif array_prefix == 'S':
