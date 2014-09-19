@@ -1,12 +1,11 @@
 import readcsv
 import math
 import numpy
-import floatformat
+from floatformat import floatformat
 from scipy import linalg as scilin
 from parsetools import parse_request
 
-global do_debug
-do_debug = False
+do_display = True
 class Layer(object):
 	"""Layer(materialID, orientation) -> layer
 	"""
@@ -66,15 +65,21 @@ class Layer(object):
 		else:
 			return missing
 
-	def print_param(self):
+	def print_param(self, display = do_display):
 		"""Print material properties and geometry parameters."""
-		the_separator = '--' * 10 + '\n' + '--' * 10 + '\n'
-
+		# the_separator = '--' * 10 + '\n' + '--' * 10 + '\n'
+		return_string = ''
 		for i in readcsv.iter_csvdict(self.PROPS):
-			print "%r" % i
-		print(the_separator)
+			return_string += "%r" % i + '\n'
+			# print return_string
+		# print(the_separator)
+		if display:
+			print "Asked for display inside layer.print_param"
+			print return_string
 
-	def print_array(self, the_names):
+		return return_string
+
+	def print_array(self, the_names, display = do_display):
 		"""Compute and print desired arrays
 
 		Possible valid inputs:
@@ -85,19 +90,37 @@ class Layer(object):
 		*Mixed requests are not supported, 
 		e.g. Q_on and S_off
 		"""
+		return_string = ''
 		array_names = parse_request(the_names)
 		# mag = lambda num: abs(math.log10(abs(float(num))))
 		# engineering_formatter = lambda x: "%10.3e" % x if mag(x) >= 3 else "%10.3f" % x
 		# print engineering_formatter(float(4.6))
-		numpy.set_printoptions(formatter = {'float_kind':floatformat.floatformat}, suppress = True)
+		numpy.set_printoptions(formatter = {'float_kind':floatformat}, 
+													suppress = True
+													)
 		title = "{0:s} [{1:s}] : "
 		for array_name in array_names:
 			if not getattr(self,array_name+'_found'):
 				raise AssertionError("Array %s has not been computed yet" % array_name)
 
 			array = getattr(self,array_name)
+			try:
+				return_string += '\n'
+				return_string += getattr(self,"u_%s" % array_name)
+			except AttributeError:
+				separator = ''
+				pass
+			return_string += title.format(array_name,self.units_dict[array_name])
+			return_string += '\n'
+			return_string += str(array)
+			return_string += '\n'
+
+		if display:
+			print "Asked for display inside layer.print_array"
 			print title.format(array_name,self.units_dict[array_name])
 			print array
+
+		return return_string
 
 	def set(self,input_dict):
 		"""Assign matrix to layer
@@ -179,39 +202,6 @@ class Layer(object):
 		self.S_off_found = True
 		return self.S_off
 
-	# def _parse_request(self,the_name):
-	# 	"""Used to parse request of arrays to be printed/modified/obtained.
-	# 	Returns a list of array_names.
-	# 	"""
-	# 	prefix_list = ['S','Q']; suffix_list = ['on','off']
-	# 	the_prefix = []; the_suffix = []
-	# 	prefix_found = False
-	# 	#Parse the input string to account for variations
-	# 	for a_prefix in prefix_list:
-	# 		if a_prefix in the_name:
-	# 			the_prefix.append(a_prefix)
-	# 			prefix_found = True
-
-	# 	if not prefix_found:
-	# 		raise AssertionError("Could not parse %s request" % the_name)
-
-	# 	sufix_found = False
-	# 	for a_suffix in suffix_list:
-	# 		if a_suffix in the_name:
-	# 			sufix_found = True
-	# 			the_suffix.append(a_suffix)
-	# 	#If neither 'on' or 'off' was found, assume user wants both.
-	# 	if not sufix_found:
-	# 		the_suffix= suffix_list
-
-	# 	array_list = []
-	# 	for a_prefix in the_prefix:
-	# 		for a_suffix in the_suffix:
-	# 			array_name = '%s_%s' % (a_prefix,a_suffix)
-	# 			array_list.append(array_name)
-
-	# 	return array_list
-
 	def _make_on_array(self, the_dict):
 		"""make_array(dict containing Aij) -> numpy array(3,3)
 		Elements not supplied will have value = 0
@@ -250,9 +240,12 @@ class Layer(object):
 		xx, xy, yy, ss
 		"""
 		do_debug = False
+		return_string = ''
 		if array_prefix == 'Q':
+			U_unit = 'GPa'
 			A = self.Q_on 
 		elif array_prefix == 'S':
+			U_unit = '1/GPa'
 			A = self.S_on
 		else:
 			raise AssertionError("""Must call _compute_u with 'Q' or 'S', not %s
@@ -265,10 +258,23 @@ class Layer(object):
 		u5 = (A[0,0] + A[1,1] - 2.0*A[0,1] + 4.0*A[2,2])/8.0
 		u = [u1, u2, u3, u4, u5]
 
+		#String making
+		
 		if do_debug:
 			print "A : ", A
 			print "u : ", u
+		
+
+		
+		counter = 1
+		return_string += "U's for %s [%s]" % (array_prefix,U_unit) + '\n'
+		for a_u in u:
+			return_string += "U%d : %7.4f" %(counter, a_u) + '\n'
+			counter += 1 
+		setattr(self,"u_%s_off" % array_prefix,return_string)
 		return u
+			
+
 
 	def _compute_A(self,u):
 		"""I call "A" the matrix that multiples [1,u2,u3] to obtain the S or Q
@@ -286,7 +292,9 @@ class Layer(object):
 
 if __name__ == "__main__":
 	my_layer = Layer(2,45)
-	my_layer.compute_all()
+	A = my_layer.print_param()
+	print '\n'*5
+	print A
 	
 				
 

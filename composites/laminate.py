@@ -2,6 +2,7 @@
 
 from parsetools import parse_layup, parse_request
 import layer
+do_display = True
 
 class Laminate(object):
 	"""Laminate(layup, materialID, compute = <method>) -> Laminate 
@@ -73,18 +74,53 @@ Arguments:
 		else:
 			raise AssertionError("Method %s is not defined" % method)
 
-	def print_param(self):
-		self.layers[0].print_param()
+	def print_param(self, display = do_display):
+		return_string = self.layers[0].print_param(display)
 
-	def print_orientation(self):
+		if display:
+			print "Asked for display inside laminate.print_param"
+			print return_string
+
+		return return_string
+
+	def print_orientation(self, display = do_display):
 		str_layup_1 = "%s" % self.layup
 		title = "Orientation [degrees] : \n"
-		print title + str_layup_1
 
-	def print_array(self,names):
-		pass
+		return_string = title + str_layup_1
+		
+		if display:
+			print "Asked for display inside print_orientation"
+			print return_string
 
-	# def 
+		return return_string
+
+	def print_array(self,names, num_of_layers = 'all', display = do_display):
+		return_string = ''
+		if num_of_layers == 'all':
+			length = len(self.layers)
+		else:
+			length = int(num_of_layers)
+
+		if length == 1:
+			separator = ''
+		else:
+			separator = '--' * 40 + '\n'
+
+		counter = 1
+		for layer in self.layers[:length]:
+				return_string += separator
+				return_string += "Layer number : %d" % counter + '\n'
+				return_string += "Orientation  : %d [degrees]" % layer.theta + '\n'
+				return_string += layer.print_array(names, display)
+				return_string += '\n'
+				counter += 1
+
+		if display:
+			print "Asked for display inside laminate.print_array"
+			print return_string
+
+		return return_string
 
 if __name__ == "__main__":
 	import time

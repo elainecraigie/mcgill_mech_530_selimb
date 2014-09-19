@@ -1,6 +1,6 @@
 import math
 # import re
-def floatformat(num, tot_length = 10, precision = 3):
+def floatformat(num, tot_length = None, precision = 3):
 	"""Documentation required.
 
 	Default total string length = 10 because that's sufficient for printing
@@ -8,6 +8,16 @@ def floatformat(num, tot_length = 10, precision = 3):
 
 	no_d stands for no digits after decimal
 	"""
+
+	###############################################################
+	#################    MAHDI REQUEST          ###################
+	Mahdi = True
+	if Mahdi:
+		if tot_length is None:
+			tot_length = 8
+		return "%*.*f" % (tot_length, 4, float(num))
+	###############################################################
+	
 	if num == 0.0 :
 		return ' '*(tot_length-3)+'0.0'
 	try:
@@ -19,12 +29,15 @@ def floatformat(num, tot_length = 10, precision = 3):
 
 	###############################################################
 	#ALWAYS USE ENGINEERING WITH INPUT PRECISION###################
-	engineering = True
+	engineering = False
 	if engineering:
+		if tot_length is None:
+			tot_length = 10
 		if num == 0.0 :
 			return ' '*(tot_length-3)+'0.0'
 		return "%*.*e" % (tot_length, precision, float(num))
 	###############################################################
+	
 
 	left,right = str(num).split('.')
 	mag = int(math.log10(abs(num)))
