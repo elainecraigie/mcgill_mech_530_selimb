@@ -14,7 +14,7 @@ def floatformat(num, tot_length = None, precision = 3):
 	Mahdi = True
 	if Mahdi:
 		if tot_length is None:
-			tot_length = 8
+			tot_length = 9
 		return "%*.*f" % (tot_length, 4, float(num))
 	###############################################################
 	

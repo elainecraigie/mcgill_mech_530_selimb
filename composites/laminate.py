@@ -105,7 +105,7 @@ Arguments:
 		if length == 1:
 			separator = ''
 		else:
-			separator = '--' * 40 + '\n'
+			separator = '--' * 20 + '\n'
 
 		counter = 1
 		for layer in self.layers[:length]:

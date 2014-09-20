@@ -7,7 +7,7 @@ set str=%~n1
 echo %str%
 set assnum=%str:~-1%
 echo %assnum%
-ipython nbconvert --to html %1
+ipython nbconvert --to html --template html_nocode.tpl %1
 set notebookfile=notebook_%assnum%
 wkhtmltopdf --image-quality 300 %str%.html docs/%notebookfile%.pdf
 del %str%.html
@@ -18,6 +18,6 @@ PAUSE
 echo \def\assnum{%assnum%}\def\thedate{%thedate%, 2014} | cat - composites_template.tex > %titlefile%.tex
 PAUSE
 pdflatex %titlefile%.tex
-pdftk %titlefile%.pdf %notebookfile%.pdf cat output composites_1.pdf
+pdftk %titlefile%.pdf %notebookfile%.pdf cat output composites_%assnum%.pdf
 del %titlefile%*.*
 del %notebookfile%*.*
