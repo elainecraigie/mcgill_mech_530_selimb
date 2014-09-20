@@ -179,7 +179,7 @@ class Layer(object):
 		"""Return off-axis Q matrix"""
 		assert(self.Q_on_found)
 		u = self._compute_u('Q')
-		A = self._compute_A(u)
+		A = self._compute_A(u,'Q')
 		b = numpy.array([[1],[u[1]],[u[2]]])
 		q_off = A.dot(b)
 		# 11,22,12,66,16,26
@@ -193,7 +193,7 @@ class Layer(object):
 		"""Return off-axis S matrix"""
 		assert(self.S_on_found)
 		u = self._compute_u('S')
-		A = self._compute_A(u)
+		A = self._compute_A(u,'S')
 		b = numpy.array([[1],[u[1]],[u[2]]])
 		s_off = A.dot(b)
 		# print q_off
@@ -242,20 +242,24 @@ class Layer(object):
 		do_debug = False
 		return_string = ''
 		if array_prefix == 'Q':
+			ss_factor = 4
+			five_factor = 1.0/8.0 
 			U_unit = 'GPa'
 			A = self.Q_on 
 		elif array_prefix == 'S':
+			ss_factor = 1
+			five_factor = 1.0/2.0
 			U_unit = '1/GPa'
 			A = self.S_on
 		else:
 			raise AssertionError("""Must call _compute_u with 'Q' or 'S', not %s
 													""" % array_prefix)
 		u = []
-		u1 = (3.0*A[0,0] + 3.0*A[1,1] + 2.0*A[0,1] + 4.0*A[2,2])/8.0
+		u1 = (3.0*A[0,0] + 3.0*A[1,1] + 2.0*A[0,1] + ss_factor*A[2,2])/8.0
 		u2 = (A[0,0] - A[1,1])/2.0
-		u3 = (A[0,0] + A[1,1] - 2.0*A[0,1] - 4.0*A[2,2])/8.0
-		u4 = (A[0,0] + A[1,1] + 6.0*A[0,1] - 4.0*A[2,2])/8.0
-		u5 = (A[0,0] + A[1,1] - 2.0*A[0,1] + 4.0*A[2,2])/8.0
+		u3 = (A[0,0] + A[1,1] - 2.0*A[0,1] - ss_factor*A[2,2])/8.0
+		u4 = (A[0,0] + A[1,1] + 6.0*A[0,1] - ss_factor*A[2,2])/8.0
+		u5 = (A[0,0] + A[1,1] - 2.0*A[0,1] + ss_factor*A[2,2])*five_factor
 		u = [u1, u2, u3, u4, u5]
 
 		#String making
@@ -272,33 +276,27 @@ class Layer(object):
 			return_string += "U%d : %7.4f" %(counter, a_u) + '\n'
 			counter += 1 
 		setattr(self,"u_%s_off" % array_prefix,return_string)
-		return u
-			
+		return u			
 
-
-	def _compute_A(self,u):
+	def _compute_A(self,u,array_prefix):
 		"""I call "A" the matrix that multiples [1,u2,u3] to obtain the S or Q
 		vector"""
 		from math import cos,sin,radians
 		tet = radians(self.theta)
+		if array_prefix == 'Q':
+			sn6 = 1
+			s66 = 1
+		elif array_prefix == 'S':
+			sn6 = 2
+			s66 = 4
 		A = numpy.array([[u[0], cos(2*tet), cos(4*tet)],  #11
 										 [u[0], -cos(2*tet), cos(4*tet)], #22
 										 [u[3], 0          ,-cos(4*tet)], #12
-										 [u[4], 0         , -cos(4*tet)], #66
-										 [0, sin(2*tet)/2, sin(4*tet)], #16
-										 [0, sin(2*tet)/2, -sin(4*tet)] #26
+										 [u[4], 0, -s66*cos(4*tet)], #66
+										 [0, sn6*sin(2*tet)/2, sn6*sin(4*tet)], #16
+										 [0, sn6*sin(2*tet)/2, -sn6*sin(4*tet)] #26
 										 ])
 		return A
 
 if __name__ == "__main__":
-	my_layer = Layer(2,45)
-	A = my_layer.print_param()
-	print '\n'*5
-	print A
-	
-				
-
-
-
-
-
+	pass

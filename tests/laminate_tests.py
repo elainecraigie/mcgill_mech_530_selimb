@@ -2,6 +2,14 @@ from nose.tools import *
 from composites.laminate import Laminate
 from composites.parsetools import parse_request
 
+
+def array_assert(x,y):
+		import numpy
+		from numpy.testing import assert_array_almost_equal
+		a = numpy.array(x, dtype = float)
+		b = numpy.array(y, dtype = float)
+		assert_array_almost_equal(a,b,decimal = 6)
+
 def setup():
 	global my_laminate
 	my_laminate = Laminate('90_2/p40/p20/0s',2)
@@ -24,7 +32,7 @@ def test_Q_on_uniform():
 	Q_on_old = my_laminate.layers[0].Q_on
 	for layer in my_laminate.layers:
 		Q_on_new = layer.Q_on
-		assert(Q_on_old.all() == Q_on_new.all())
+		array_assert(Q_on_new,Q_on_old)
 		Q_on_old = Q_on_new
 
 def test_S_on_uniform():
@@ -33,7 +41,7 @@ def test_S_on_uniform():
 	S_on_old = my_laminate.layers[0].S_on
 	for layer in my_laminate.layers:
 		S_on_new = layer.S_on
-		assert(S_on_old.all() == S_on_new.all())
+		array_assert(S_on_new,S_on_old)
 		S_on_old = S_on_new
 
 def test_orientation_order():
@@ -62,9 +70,9 @@ def test_smart_vs_dumb():
 	print len(my_smart.layers)
 	for i in range(len(my_smart.layers)):
 		for j in parse_request('QS'):
-			smart = getattr(my_smart.layers[i],j).all()
-			dumb = getattr(my_dumb.layers[i],j).all()
-			assert(smart == dumb)
+			smart = getattr(my_smart.layers[i],j)
+			dumb = getattr(my_dumb.layers[i],j)
+			array_assert(smart,dumb)
 
 def test_smart_q_s_on_uniform():
 	my_smart = Laminate('90_2/p40/p20/0s',2)
@@ -73,8 +81,8 @@ def test_smart_q_s_on_uniform():
 	Q_on_0 = my_smart.layers[0].Q_on
 	S_on_0 = my_smart.layers[0].S_on
 	for layer in my_smart.layers:
-		assert(layer.Q_on.all() == Q_on_0.all())
-		assert(layer.S_on.all() == S_on_0.all())
+		array_assert(layer.Q_on, Q_on_0)
+		array_assert(layer.S_on,S_on_0)
 
 # def 
 
