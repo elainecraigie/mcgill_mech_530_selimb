@@ -61,4 +61,5 @@ def transform_strain(values,input_axis,angle, do_debug = False):
 	return ret_array
 
 if __name__ == '__main__':
-	sigma_on = transform_stress([0.420,-0.165,-0.135],'off',30, do_debug = True)
+	sigma_on = transform_strain([0.0659,-0.0471,-0.0832],'off',30, do_debug = True)
+	print sigma_on
