@@ -89,6 +89,8 @@ class Layer(object):
 
 		*Mixed requests are not supported, 
 		e.g. Q_on and S_off
+
+		If an off-axis matrix is returned, U is also printed. 
 		"""
 		return_string = ''
 		array_names = parse_request(the_names)
@@ -104,16 +106,19 @@ class Layer(object):
 				raise AssertionError("Array %s has not been computed yet" % array_name)
 
 			array = getattr(self,array_name)
-			try:
-				return_string += '\n'
-				return_string += getattr(self,"u_%s" % array_name)
-			except AttributeError:
-				separator = ''
-				pass
+			
 			return_string += title.format(array_name,self.units_dict[array_name])
 			return_string += '\n'
 			return_string += str(array)
-			return_string += '\n'
+			
+
+			if 'on' in array_name:
+				return_string += '\n'					
+				return_string += getattr(self,"u_%s_string" % array_name.split('_')[0])
+			else:
+				pass #No print of U's.
+
+			return_string += '\n'	
 
 		if display:
 			print "Asked for display inside layer.print_array"
@@ -261,21 +266,22 @@ class Layer(object):
 		u4 = (A[0,0] + A[1,1] + 6.0*A[0,1] - ss_factor*A[2,2])/8.0
 		u5 = (A[0,0] + A[1,1] - 2.0*A[0,1] + ss_factor*A[2,2])*five_factor
 		u = [u1, u2, u3, u4, u5]
-
+		if array_prefix == 'Q':
+			self.U_Q = u
+		else:
+			self.U_S = u
 		#String making
 		
 		if do_debug:
 			print "A : ", A
-			print "u : ", u
-		
-
+			print "u : ", u		
 		
 		counter = 1
 		return_string += "U's for %s [%s]" % (array_prefix,U_unit) + '\n'
 		for a_u in u:
 			return_string += "U%d : %7.4f" %(counter, a_u) + '\n'
 			counter += 1 
-		setattr(self,"u_%s_off" % array_prefix,return_string)
+		setattr(self,"u_%s_string" % array_prefix,return_string)
 		return u			
 
 	def _compute_A(self,u,array_prefix):

@@ -3,12 +3,12 @@ from composites.laminate import Laminate
 from composites.parsetools import parse_request
 
 
-def array_assert(x,y):
+def array_assert(x,y,precision = 6):
 		import numpy
 		from numpy.testing import assert_array_almost_equal
 		a = numpy.array(x, dtype = float)
 		b = numpy.array(y, dtype = float)
-		assert_array_almost_equal(a,b,decimal = 6)
+		assert_array_almost_equal(a,b,decimal = precision)
 
 def setup():
 	global my_laminate
@@ -20,7 +20,7 @@ def test_number_of_plies():
 
 def test_total_thickness():
 	global my_laminate
-	assert(my_laminate.total_thickness == 0.125*14)
+	assert(my_laminate.total_thickness == 0.125*14/1000)
 
 def test_print_param():
 	global my_laminate
@@ -84,7 +84,68 @@ def test_smart_q_s_on_uniform():
 		array_assert(layer.Q_on, Q_on_0)
 		array_assert(layer.S_on,S_on_0)
 
-# def 
+def test_cross_ply():
+	import numpy
+	my_lam = Laminate('0/90/0/90/0/90/0/90',2)
+	my_lam.compute_all()
+
+	should_be_zero = numpy.absolute(numpy.array([my_lam.A_vec[-2:],
+																							my_lam.a_vec[-2:]
+																							]).reshape(4,))
+	zeros = [0]*4
+	print should_be_zero
+	print zeros
+	array_assert(should_be_zero,zeros) 
+
+def test_angle_ply():
+	import numpy
+	my_lam = Laminate('p45s',2)
+	my_lam.compute_all()
+
+	should_be_zero = numpy.absolute(numpy.array([my_lam.A_vec[-2:],
+																							my_lam.a_vec[-2:]
+																							]).reshape(4,))
+	zeros = [0]*4
+	print should_be_zero
+	print zeros
+	array_assert(should_be_zero,zeros) 
+
+def test_values_p56_30degrees():
+	import numpy
+	my_lam = Laminate('p30',1)
+	my_lam.compute_all()
+
+	A = numpy.array(my_lam.A_vec)/my_lam.total_thickness
+	A_desired = [109.3,23.6, 32.46, 36.73, 0, 0]
+	a = numpy.array(my_lam.a_vec)*my_lam.total_thickness*1000
+	a_desired = [15.42, 71.36, -21.18, 27.22, 0, 0]
+	array_assert(A,A_desired,precision = 1)
+	array_assert(a,a_desired,precision = 1)
+
+def test_values_p56_75degrees():
+	import numpy
+	my_lam = Laminate('m75',1)
+	my_lam.compute_all()
+	print my_lam.layup
+	print my_lam.A_vec
+
+	A = numpy.array(my_lam.A_vec)/my_lam.total_thickness
+	A_desired = [11.9,160.4, 12.75, 17.02, 0, 0]
+	a = numpy.array(my_lam.a_vec)*my_lam.total_thickness*1000
+	a_desired = [91.21, 6.80, -7.24, 58.73, 0, 0]
+	array_assert(A,A_desired,precision = 1)
+	array_assert(a,a_desired,precision = 1)
+
+def test_quasi_isotropic():
+	import numpy
+	my_lam = Laminate('0/p60s',1)
+	my_lam.compute_all()
+
+	A = my_lam.A_vec
+	array_assert(A[0],A[1])
+	array_assert(A[-1],0.0)
+	array_assert(A[-2],0.0)
+	array_assert((A[0]-A[2])/2, A[3])
 
 
 
