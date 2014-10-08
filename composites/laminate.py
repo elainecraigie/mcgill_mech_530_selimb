@@ -36,18 +36,65 @@ composed of layers with various orientations but the same material properties.
 Arguments:
 	-layup : layup as a string. See parselayup.py
 	-materialID : ID of the wanted material
+	-core_thick : Thickness of the honeycomb core in meters
+		Note: There must be an even number of plies for the core to be properly 
+		taken into account.
 	-compute = 'dumb' or 'smart'. Smart uses symmetry if possible.
 	"""
-	def __init__(self, layup, materialID, compute = None):
+	def __init__(self, layup, materialID, core_thick = 0.0, compute = None):
+
 		self.layup, self.symmetric = parse_layup(layup)
 		self.layers = [] 
+
+		counter = 0
 		for orientation in self.layup:
 			new_layer = layer.Layer(materialID,orientation)
+			new_layer.set_index(counter)
+			counter += 1
 			self.layers.append(new_layer)
+
+		self.total_ply_thickness = len(self.layup)*self.layers[0].PROPS['h0']/1000
+		if core_thick != 0.0:
+			assert(core_thick>0.0)
+			self.has_core = True
+		else:
+			self.has_core = False
+
+		self.zc = float(core_thick)
+		self.total_thickness = self.total_ply_thickness + self.zc
+		self._assign_h()
+
 		if compute is not None:
 			self.compute_all()
 
-		self.total_thickness = len(self.layup)*self.layers[0].PROPS['h0']/1000
+	def _assign_h(self):
+		import numpy
+		h = self.total_thickness/2.0 #Total thickness of ply
+		h0 = self.layers[0].PROPS['h0']/1000.0 #Thickness of one ply
+		zc = self.zc #Thickness of core
+		mid_ply_index = len(self.layers)/2
+
+		z_bot = -h
+		z_top = z_bot + h0
+
+		self.z_array = numpy.zeros((len(self.layers),2))
+		counter = 0
+		for layer in self.layers:
+			if self.has_core and layer.index == mid_ply_index:
+				#This is the ply right above the core. 
+				z_bot+=zc
+				z_top+=zc
+			else:
+				pass
+
+			layer.set_z(z_bot,z_top)
+			self.z_array[counter] = [z_bot,z_top]
+
+			z_bot+=h0
+			z_top+=h0
+			counter+=1
+
+		# print self.z_array
 
 	def compute_all(self, method = 'smart'):
 		"""method takes 'dumb' or 'smart'
@@ -100,6 +147,7 @@ Arguments:
 			raise AssertionError("Method %s is not defined" % method)
 
 		self._compute_A()
+		self._compute_D()
 
 	def _compute_A(self):
 		import numpy
@@ -124,6 +172,34 @@ Arguments:
 		self.a = scipy.linalg.inv(self.A)
 		a = self.a
 		self.a_vec = make_vec(a)
+
+	def _compute_D(self):
+		import numpy
+		import scipy
+		z_diff = self.z_array[:,1]**3-self.z_array[:,0]**3
+		thetas = numpy.radians(self.layup)
+		U1,U2,U3,U4,U5 = self.layers[0].U_Q
+		h_star = (1-self.zc**3)*self.total_thickness**3/12.0
+
+		V1 = 1.0/3.0*(numpy.cos(2*thetas)*z_diff).sum()
+		V2 = 1.0/3.0*(numpy.cos(4*thetas)*z_diff).sum()
+		V3 = 1.0/3.0*(numpy.sin(2*thetas)*z_diff).sum()
+		V4 = 1.0/3.0*(numpy.sin(4*thetas)*z_diff).sum()
+		the_array = numpy.array([[U1,V1,V2],
+														 [U1,-V1,V2],
+														 [U4,0,-V2],
+														 [U5,0,-V2],
+														 [0,V3/2,V4],
+														 [0,V3/2,-V4]
+														 ])
+		vec = numpy.array([h_star,U2,U3])
+		self.D_vec = the_array.dot(vec)
+		self.D = make_array(self.D_vec) #**9 to obtain Nm
+
+		self.d = scipy.linalg.inv(self.D)
+		d = self.d                      #**-6 to obtain (kNm)-1
+		self.d_vec = make_vec(d)
+
 
 	def print_param(self, display = do_display):
 		return_string = self.layers[0].print_param(display)
@@ -202,10 +278,20 @@ if __name__ == "__main__":
 	# print my_lam.A
 	# print my_lam.a
 	# print scipy.linalg.inv(my_lam.a)
-	my_cross = Laminate('0/90/0/90/0/90/0/90',2)
+	layup = '0_4/90_4s'
+	my_cross = Laminate(layup,1)
 	my_cross.compute_all()
-	print my_cross.A
-	print my_cross.a
+	layup = '0_2/90_2/0_2/90_2s'
+	my_cross = Laminate(layup,1)
+	my_cross.compute_all()
+	layup = '0/90/0/90/0/90/0/90s'
+	my_cross = Laminate(layup,1)
+	my_cross.compute_all()
+	# print "h = :",my_cross.total_thickness
+	# print "D11 = :", my_cross.D_vec
+	# my_cross.compute_all()
+	# print my_cross.A
+	# print my_cross.a
 
 	# print dumbtime
 	# print smarttime

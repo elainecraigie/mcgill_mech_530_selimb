@@ -304,5 +304,17 @@ class Layer(object):
 										 ])
 		return A
 
+	def set_index(self,index):
+		self.index = index
+
+	def set_z(self,z_bot,z_top):
+		self.z_bot = float(z_bot)
+		self.z_top = float(z_top)
+
+
+	def get_z(self):
+		return [self.z_bot,self.z_top]
+
+
 if __name__ == "__main__":
 	pass

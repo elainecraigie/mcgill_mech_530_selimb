@@ -18,9 +18,38 @@ def test_number_of_plies():
 	global my_laminate
 	assert(len(my_laminate.layers)==14)
 
+def test_index():
+	global my_laminate
+	for i in range(14):
+		assert(my_laminate.layers[i].index == i)
+
 def test_total_thickness():
 	global my_laminate
 	assert(my_laminate.total_thickness == 0.125*14/1000)
+	assert(not my_laminate.has_core)
+
+def test_core_thickness():
+	my_laminate = Laminate('90_2/p40/p20/0s',2, core_thick = 0.01)
+	assert(my_laminate.total_ply_thickness == 0.125*14/1000)
+	assert(my_laminate.total_thickness == 0.125*14/1000 + 0.01)
+	assert(my_laminate.has_core)
+
+def test_z_no_core():
+	global my_laminate
+	assert (my_laminate.layers[0].z_bot == -0.000875)
+	assert (my_laminate.layers[13].z_top == 0.000875)
+	assert (my_laminate.layers[6].z_top == my_laminate.layers[7].z_bot)
+
+def test_z_w_core():
+	my_laminate = Laminate('90_2/p40/p20/0s',2, core_thick = 1)
+	# print "%.9f" % (my_laminate.layers[0].z_bot)
+	print "%.9f" % (my_laminate.layers[13].z_top)
+	array_assert (my_laminate.layers[0].z_bot, float(-0.500875))
+	array_assert (my_laminate.layers[13].z_top, float(0.500875000))
+	print -my_laminate.layers[6].z_top
+	print my_laminate.layers[7].z_bot
+	array_assert (float(my_laminate.layers[6].z_top), 
+							-1.0*float(my_laminate.layers[7].z_bot))
 
 def test_print_param():
 	global my_laminate
@@ -147,6 +176,21 @@ def test_quasi_isotropic():
 	array_assert(A[-2],0.0)
 	array_assert((A[0]-A[2])/2, A[3])
 
+def test_cross_m_4():
+	import numpy
+	layup = '0_4/90_4s'
+	my_cross = Laminate(layup,1)
+	my_cross.compute_all()
+	D_desired = numpy.array([[106.9,1.93,0.0],
+													[1.93,21.18,0.0],
+													[0.0,0.0,4.78]
+													])
+	d_desired = numpy.array([[9.36,-0.85,0],
+													[-0.85,47.27,0],
+													[0.0,0.0,209.2]
+													])
+	array_assert(my_cross.D*10**9 , D_desired,precision = 1)
+	array_assert(my_cross.d*10**-6 , d_desired,precision = 1)
 
 
 

@@ -17,6 +17,11 @@ def setup():
 	my_layer = Layer(2,45)
 	my_layer.compute_all()
 
+def test_z():
+	global my_layer
+	my_layer.set_z(4,5)
+	assert([4,5]==my_layer.get_z())
+
 def test_compute_all_force():
 	global my_layer
 	modified = my_layer.compute_all(force = True)
