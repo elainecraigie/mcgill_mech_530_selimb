@@ -17,6 +17,7 @@ def setup():
 def test_number_of_plies():
 	global my_laminate
 	assert(len(my_laminate.layers)==14)
+	assert(my_laminate.num_of_layers() == 14)
 
 def test_index():
 	global my_laminate
@@ -176,7 +177,7 @@ def test_quasi_isotropic():
 	array_assert(A[-2],0.0)
 	array_assert((A[0]-A[2])/2, A[3])
 
-def test_cross_m_4():
+def test_d_cross_m_4():
 	import numpy
 	layup = '0_4/90_4s'
 	my_cross = Laminate(layup,1)
@@ -191,6 +192,13 @@ def test_cross_m_4():
 													])
 	array_assert(my_cross.D*10**9 , D_desired,precision = 1)
 	array_assert(my_cross.d*10**-6 , d_desired,precision = 1)
+
+def test_computed():
+	layup = '0_4/90_4s'
+	my_lam = Laminate(layup,1)
+	assert(my_lam.computed == False)
+	assert(my_lam.compute_all() == True)
+	assert(my_lam.compute_all() == False)
 
 
 

@@ -1,4 +1,10 @@
-#TODO : Implement z_core
+"""
+This module provides a Laminate class.
+A Laminate is given a layup and a materialID and optionally a core thickness.
+Laminate composes itself of necessary layers.
+In-plane and flexural compliance/modulus matrices are calculated.  
+Loads and stuff are applied within applyloads module
+"""
 
 def make_array(a):
 		"""Expecting vector with following values
@@ -27,7 +33,7 @@ def make_vec(the_array):
 
 from parsetools import parse_layup, parse_request
 import layer
-do_display = True
+do_display = False
 
 class Laminate(object):
 	"""Laminate(layup, materialID, compute = <method>) -> Laminate 
@@ -63,10 +69,13 @@ Arguments:
 		self.zc = float(core_thick)
 		self.total_thickness = self.total_ply_thickness + self.zc
 		self._assign_h()
-
+		self.computed = False
 		if compute is not None:
 			self.compute_all()
 
+	def num_of_layers(self):
+		return len(self.layers)
+		
 	def _assign_h(self):
 		import numpy
 		h = self.total_thickness/2.0 #Total thickness of ply
@@ -102,8 +111,13 @@ Arguments:
 		Smart method :
 			-Computes Q_on, S_on only once and assigns it all other layers
 			-If symmetric, only computes Q_off, S_off for half the layers.
+
+		Returns True if computations were done.
+		Returns False if compute_all was already executed and nothing is done.
 		""" 
 		do_debug = False
+		if self.computed:
+			return False
 		if method is 'dumb':
 			for layer in self.layers:
 				layer.compute_all()
@@ -148,6 +162,8 @@ Arguments:
 
 		self._compute_A()
 		self._compute_D()
+		self.computed = True
+		return True
 
 	def _compute_A(self):
 		import numpy
@@ -193,13 +209,12 @@ Arguments:
 														 [0,V3/2,-V4]
 														 ])
 		vec = numpy.array([h_star,U2,U3])
-		self.D_vec = the_array.dot(vec)
+		self.D_vec = the_array.dot(vec) 
 		self.D = make_array(self.D_vec) #**9 to obtain Nm
 
 		self.d = scipy.linalg.inv(self.D)
 		d = self.d                      #**-6 to obtain (kNm)-1
 		self.d_vec = make_vec(d)
-
 
 	def print_param(self, display = do_display):
 		return_string = self.layers[0].print_param(display)

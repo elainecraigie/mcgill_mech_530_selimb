@@ -2,7 +2,7 @@ from nose.tools import *
 from composites.layer import *
 import numpy
 from scipy import linalg as scilin
-from composites.transform import transform_stress,transform_strain
+from composites.sim import transform_stress,transform_strain
 
 
 def array_assert(x,y, precision = 6):
@@ -192,7 +192,6 @@ def test_off_stress_to_off_strain():
 
 
 def test_by_hand():
-	from composites.transform import transform_stress,transform_strain
 	import numpy
 	from math import cos, sin, radians
 	load = numpy.array([1,0,0])
