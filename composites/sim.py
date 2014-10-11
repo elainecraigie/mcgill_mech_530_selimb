@@ -91,7 +91,6 @@ class Sim(object):
 		x = kwargs
 		try:
 			self.laminate = x['laminate']
-			print "Found it!"
 		except AttributeError as e: #['laminate'] does not contain a Laminate
 			raise AttributeError("'laminate' must point to 'Laminate' object \n"+e.message)
 		except KeyError:
@@ -103,6 +102,8 @@ class Sim(object):
 		self.laminate.compute_all()
 		self.e0 = numpy.zeros((3,))   #Average strain from overall in-plane stress 'N'
 		self.e_k = None
+		self.solved = False
+		self.loaded = False
 	
 	@ureg.wraps(None, (None,ureg.GNperm))
 	def apply_N(self,N_input,do_return = False):
@@ -115,7 +116,9 @@ class Sim(object):
 		except ValueError:
 			raise ValueError("Could not reshape %r to a 'float' 3D array" % N_input)
 
+		self.loaded = True
 		if do_return:
+
 			return self.e0
 
 	@ureg.wraps(None, (None,ureg.GN,None))
@@ -134,6 +137,7 @@ class Sim(object):
 																					z_top*self.k)
 																				 )
 
+		self.loaded = True
 		if do_return:
 			return self.k,self.e_k
 
@@ -144,7 +148,7 @@ class Sim(object):
 				# 	index = layer.index
 				# 	self.off_strain['%s_%s' % (index,pos[0])] = self.e0 + self.e_k[index*2]
 				# 	self.off_strain['%s_%s' % (index,pos[1])] = self.e0 + self.e_k[index*2+1]}
-		self.off_strain = numpy.empty_like(self.e_k)
+		self.off_strain = numpy.empty((self.laminate.num_of_layers(),2,3), dtype = float)
 		if self.e_k is None:
 			self.off_strain[:,:,:] = self.e0
 		else:
@@ -166,26 +170,71 @@ class Sim(object):
 	def _compute_on_stress(self):
 		#Black magic
 		Q_on = self.laminate.layers[0].Q_on
-		temp_shape = ((3,self.laminate.num_of_layers()*2))
-		og_shape = shape(self.on_strain)
-		self.on_stress = Q_on.dot(self.on_strain.reshape(temp_shape).T.reshape(og_shape)
+		trans = lambda x:numpy.vstack(x).T 
+		og_shape = numpy.shape(self.on_strain)
+		self.on_stress = Q_on.dot(trans(self.on_strain)).T.reshape(og_shape)
+		# print Q_on.dot(self.on_strain[-1,1])
 
-	def _compute_on_stress(self):
-		raise NotImplementedError
+	def _compute_off_stress(self):
+		self.off_stress = numpy.empty_like(self.on_stress)
+		for layer in self.laminate.layers:
+			off_stress_bot = transform_stress(self.on_stress[layer.index,0,:],
+																			'on',
+																			layer.theta)
+			off_stress_top = transform_stress(self.on_stress[layer.index,1,:],
+																			'on',
+																			layer.theta)
+			self.off_stress[layer.index,:,:] = numpy.vstack((off_stress_bot,
+																										off_stress_top
+																										))
 
 	def solve(self):
-		raise NotImplementedError
+		if not self.loaded:
+			print "Nothing to solve. Apply loads before solving."
+			return
 
-	def return_results(self,do_display = True):
-		raise NotImplementedError
+		self._compute_off_strain()
+		self._compute_on_strain()
+		self._compute_on_stress()
+		self._compute_off_stress()
+		self.solved = True
 
-		if do_display:
-			print off_strain
-			print on_strain
-			print on_stress
-		else:
-			return off_strain,on_strain,on_stress
+	def return_results(self):
+		if not self.solved:
+			self.solve()
 
+		import numpy as np
+		import pandas as pd
+		import sympy
+		from sympy import latex as stex
+
+
+		off_strain = np.vstack(self.off_strain) 
+		on_strain = np.vstack(self.on_strain)
+		on_stress = np.vstack(self.on_stress)
+		off_stress = np.vstack(self.off_stress)
+
+		make_columns = lambda *args: [stex('$%s$'%arg) for arg in args]
+		columns = make_columns('\epsilon_1','\epsilon_2','\epsilon_6',
+                       '\epsilon_x','\epsilon_y','\epsilon_s',
+                       '\sigma_1','\sigma_2','\sigma_6')
+		d_onstrain = pd.DataFrame(data = np.round(np.hstack((off_strain,
+                                           							on_strain,
+                                           							on_stress
+                                           							)),
+                                        			decimals = 4
+                                        			)
+                          		,columns=columns
+                          	)
+		pieces = [d_onstrain[i:i+2] for i in range(0
+																							,len(off_strain)
+																							,2)
+							]
+		rows = [stex('Ply %i (%i$^\circ$)' % (layer.index,layer.theta)) \
+					 for layer in self.laminate.layers \
+					 ]
+		return pd.concat(pieces,keys = rows)
+			
 if __name__ == '__main__':
 	# sigma_on = transform_strain([0.0659,-0.0471,-0.0832],'off',30, do_debug = True)
 	# print sigma_on
@@ -196,9 +245,7 @@ if __name__ == '__main__':
 	moment = P*L/(4*b)
 	M = Q_([moment.magnitude,0,0],moment.units)
 	k,e = my_sim.apply_M(M,do_return = True)
-	print my_sim.laminate.num_of_layers()
-	print e.shape
-	print e
-	print '----' * 6
-	# my_sim._compute_off_strain()
-	print '----' * 6
+	print e[-1,1,:]
+	sigma_manual = my_sim.laminate.layers[-1].Q_on.dot(e[-1,1,:])
+	print sigma_manual
+

@@ -1,8 +1,9 @@
-from nose.tools import *
+# from nose.tools import *
 from composites.sim import transform_stress,transform_strain, Sim, ureg, Q_
 import numpy
 from numpy.testing import assert_array_almost_equal
 from composites.laminate import Laminate
+import warnings
 
 # def setup():
 # 	global my_sim
@@ -14,6 +15,31 @@ def array_assert(x,y,precision = 6):
 		a = numpy.array(x, dtype = float)
 		b = numpy.array(y, dtype = float)
 		assert_array_almost_equal(a,b,decimal = precision)
+
+def array_assert_error(value,desired,tol = 2):
+	"""Error is in \%"""
+	engformat = lambda x: "%.4e" % x
+	numpy.set_printoptions(formatter = {'float_kind':engformat})
+	a = numpy.array(value,dtype=float)
+	b = numpy.array(desired,dtype=float)
+	# warnings.filterwarnings('error')
+	# try:
+	nonzero = numpy.array(b,dtype=bool)
+	err = numpy.array([(a[i]-b[i])/b[i] for i in range(len(a)) if nonzero[i]])
+	# err = numpy.abs(numpy.where(cond,(a-b)/b,a*10**15))
+	errmax = err.max()*100
+	try:
+		# raise AssertionError
+		assert( errmax <= float(tol))
+	except AssertionError:
+		message = ''
+		message += "value  = %s" % a + '\n'
+		message += "desired = %s" % b + '\n'
+		message += "error = %s" % err + '\n'
+		message += "max_error = %.2f %%" % errmax + '\n'
+		message += "tolerance = %.2f %%" % tol
+		raise AssertionError(message)
+
 
 def test_stress_off_to_on_to_off():
 	off_axis_og = [420,-165,-135]
@@ -94,10 +120,46 @@ def test_Sim_wrong_key_2():
 		raise AssertionError
 
 def test_Sim_ass_3():
+	#####From assignment 3####
+	laminate_q1 = Laminate('p10/90/0_2/p50s',
+                       materialID = 1)
+	laminate_q1.compute_all()
+	load = numpy.array([450000,-110000,-130000],dtype=float)
+	load = load*10**-6
+	off_stress_norm = load*10**-3
+	off_strain = laminate_q1.a.dot(off_stress_norm).reshape((3,1))
+	on_strain = numpy.empty((14,3))
+	on_stress = numpy.empty((14,3))
+	for i in range(14):
+		layer = laminate_q1.layers[i]
+		on_strain[i,:] = transform_strain(off_strain,'off',layer.theta)
+		on_stress[i,:] = laminate_q1.layers[0].Q_on.dot(on_strain[i,:])
+	######
+	######From new Sim####
+	#####
 	my_sim = Sim(layup = 'p10/90/0_2/p50s', materialID = 1)
 	my_sim.apply_N(numpy.array([[0.4500],[-0.1100],[-0.1300]])*ureg.MNperm)
-	array_assert(my_sim.e0,numpy.array([   0.0025,-0.0019,-0.0038]),
-												precision = 4)
+	my_sim.solve()
+	sim_off_strain = numpy.vstack(my_sim.off_strain)
+	sim_on_strain = numpy.vstack(my_sim.on_strain)
+	sim_on_stress = numpy.vstack(my_sim.on_stress)
+	# sim_off_stress = numpy.vstack(my_sim.off_stress)
+	for row in sim_off_strain:
+		# print row
+		array_assert_error(row,off_strain,tol = 0.001)
+	# for row in sim_on_strain:
+	# 	array_assert_error(row,on_strain,tol=0.001)
+	array_assert(sim_on_strain[0::2,:],on_strain,precision = 10)
+	array_assert(sim_on_strain[1::2,:],on_strain,precision = 10)
+	array_assert(sim_on_stress[0::2,:],on_stress,precision = 10)
+	array_assert(sim_on_stress[1::2,:],on_stress,precision = 10)
+	# for row in sim_on_stress:
+	# 	print row
+	# 	array_assert_error(row,on_stress,tol=0.001)
+
+		
+	# array_assert_error(my_sim.on_strain[:,:,:],on_strain)
+
 
 def test_apply_M_k_Sim_p96():
 	global my_sim_p96
@@ -138,12 +200,47 @@ def test_stress_Sim_p96():
 def test_compute_off_strain_p96():
 	global my_sim_p96
 	my_sim_p96._compute_off_strain()
-	array_assert(my_sim_p96.off_strain[-1,1,:]*10**3,[-2.34,0.212,0],precision = 2)
+	array_assert(my_sim_p96.off_strain[-1,1,:],
+							 [-2.34*10**-3,0.212*10**-3,0],
+							 precision = 5
+							)
 
 def test_compute_on_strain_p96():
 	global my_sim_p96
 	my_sim_p96._compute_on_strain()
 	array_assert(my_sim_p96.on_strain[-1,1,:]*10**3,[-2.34,0.212,0],precision = 2)
+
+def test_compute_on_stress_p96():
+	global my_sim_p96
+	my_sim_p96._compute_on_stress()
+	desire = numpy.array([-424,-4.57,0])*10**-3
+	array_assert_error(my_sim_p96.on_stress[-1,1,:],desire )
+
+def test_compute_off_stress_p96():
+	global my_sim_p96
+	my_sim_p96._compute_off_stress()
+	desire = numpy.array([-424,-4.57,0])*10**-3
+	array_assert_error(my_sim_p96.off_stress[-1,1,:],desire)
+
+def test_solve_N():
+	sim = Sim(layup = '45/90',materialID = 2)
+	assert(not sim.solved)
+	sim.solve()
+	assert(not sim.solved)
+	sim.apply_N([500,500,500]*ureg.MNperm)
+	sim.solve()
+	assert(sim.solved)
+
+def test_solve_M():
+	sim = Sim(layup = '45/90',materialID = 2)
+	assert(not sim.solved)
+	sim.solve()
+	assert(not sim.solved)
+	sim.apply_M([500,500,500]*ureg.MN)
+	sim.solve()
+	assert(sim.solved)
+
+
 
 
 
