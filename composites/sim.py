@@ -213,27 +213,37 @@ class Sim(object):
 		on_strain = np.vstack(self.on_strain)
 		on_stress = np.vstack(self.on_stress)
 		off_stress = np.vstack(self.off_stress)
-
+		stacks = np.round(np.hstack((off_strain,
+                   							on_strain,
+                   							on_stress,
+                   							)),
+                			decimals = 4
+                			)
 		make_columns = lambda *args: [stex('$%s$'%arg) for arg in args]
 		columns = make_columns('\epsilon_1','\epsilon_2','\epsilon_6',
                        '\epsilon_x','\epsilon_y','\epsilon_s',
                        '\sigma_1','\sigma_2','\sigma_6')
-		d_onstrain = pd.DataFrame(data = np.round(np.hstack((off_strain,
-                                           							on_strain,
-                                           							on_stress
-                                           							)),
-                                        			decimals = 4
-                                        			)
+		# columns.append('Ply Number')
+		rows = [ stex('%i (%i$^\circ$) - %s' % (layer.index,layer.theta,pos)) \
+					 for layer in self.laminate.layers for pos in ['Bot','Top']]
+					 
+		d_onstrain = pd.DataFrame(data = stacks
                           		,columns=columns
+                          		,dtype = float
                           	)
-		pieces = [d_onstrain[i:i+2] for i in range(0
-																							,len(off_strain)
-																							,2)
-							]
-		rows = [stex('Ply %i (%i$^\circ$)' % (layer.index,layer.theta)) \
-					 for layer in self.laminate.layers \
-					 ]
-		return pd.concat(pieces,keys = rows)
+
+		d_onstrain['Ply Number'] = rows
+		d_onstrain.set_index('Ply Number',inplace = True)
+
+		# pieces = [d_onstrain[i:i+2] for i in range(0
+		# 																					,len(off_strain)
+		# 																					,2)
+							# ]
+		# rows = [stex('Ply %i (%i$^\circ$)' % (layer.index,layer.theta)) \
+		# 			 for layer in self.laminate.layers \
+		# 			 ]
+		return d_onstrain
+		# return pd.concat(pieces,keys = rows)
 			
 if __name__ == '__main__':
 	# sigma_on = transform_strain([0.0659,-0.0471,-0.0832],'off',30, do_debug = True)
