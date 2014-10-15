@@ -4,6 +4,7 @@
 *.txt
 *.xlsx
 setup.py
+Untitled0.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -60,5 +61,3 @@ docs/_build/
 # PyBuilder
 target/
 composites_assignment_1.tex
-Untitled0.ipynb
-Untitled0.ipynb
