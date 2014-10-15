@@ -284,6 +284,21 @@ Arguments:
 
 		return return_string
 
+	def print_D(self, display = do_display):
+		from floatformat import floatformat
+		import numpy
+		numpy.set_printoptions(formatter = {'float_kind':floatformat}, 
+													suppress = True
+													)
+		return_string = ''
+		return_string += "D [kNm] : \n"
+		return_string += str(self.D*10**6)
+		return_string += '\n'
+		return_string += "d [1/MNm] : \n"
+		return_string += str(self.d*10**-3)
+
+		return return_string
+
 
 if __name__ == "__main__":
 	# import scipy
