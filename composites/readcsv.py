@@ -107,8 +107,12 @@ class iter_csvdict():
 		"""Code from 
 		http://stackoverflow.com/questions/9281788/get-longest-element-in-dict
 		"""
-		maks=max(self.csvdict, key=lambda k: len(str(self.csvdict[k])))
-		return int(len(self.csvdict[maks]))	
+		# csvdict_no_headers = 
+		# maks=max(self.csvdict, key=lambda k: len(str(self.csvdict[k])))
+		max_item = max([self.csvdict[k] for k in self.csvdict['headers']])
+		print max_item
+
+		return int(len(max_item))	
 
 if __name__ == "__main__":
 	PROPS = readcsv('2','materialprops.csv')
