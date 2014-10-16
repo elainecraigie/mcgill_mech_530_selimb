@@ -192,12 +192,11 @@ Arguments:
 	def _compute_D(self):
 		import numpy
 		import scipy
-		do_debug = True
+		do_debug = False
 		z_diff = self.z_array[:,1]**3-self.z_array[:,0]**3
 		thetas = numpy.radians(self.layup)
 		U1,U2,U3,U4,U5 = self.layers[0].U_Q
-		h_star = (1-self.zc**3)*self.total_thickness**3/12.0
-
+		h_star = z_diff.sum()/3.0
 		V1 = 1.0/3.0*(numpy.cos(2*thetas)*z_diff).sum()
 		V2 = 1.0/3.0*(numpy.cos(4*thetas)*z_diff).sum()
 		V3 = 1.0/3.0*(numpy.sin(2*thetas)*z_diff).sum()
@@ -314,8 +313,14 @@ Arguments:
 
 
 if __name__ == "__main__":
+	import numpy
 	lam = Laminate('0_2/p25/0_2s',materialID = 5, core_thick = 0.01)
 	lam.compute_all()
+	numpy.set_printoptions(formatter = {'float_kind':lambda num: "%.5f" % num})
+	print lam.D*10**5
+	print lam.d*10**-6
+	# print lam.num_of_layers()-1
+	# print lam.num_of_layers()/2-1
 	
 
 
