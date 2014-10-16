@@ -192,6 +192,7 @@ Arguments:
 	def _compute_D(self):
 		import numpy
 		import scipy
+		do_debug = True
 		z_diff = self.z_array[:,1]**3-self.z_array[:,0]**3
 		thetas = numpy.radians(self.layup)
 		U1,U2,U3,U4,U5 = self.layers[0].U_Q
@@ -215,6 +216,18 @@ Arguments:
 		self.d = scipy.linalg.inv(self.D)
 		d = self.d                      #**-6 to obtain (kNm)-1
 		self.d_vec = make_vec(d)
+
+		if do_debug:
+			return_string = ''
+			return_string = "z : %r" % self.z_array
+			return_string += "V1 : %r" %V1; return_string += '\n'
+			return_string += "V2 : %r" %V2; return_string += '\n'
+			return_string += "V3 : %r" %V3; return_string += '\n'
+			return_string += "V4 : %r" %V4; return_string += '\n'
+			return_string += "Big array : %r" %the_array; return_string += '\n'
+			return_string += "vector %r" %vec; return_string += '\n'
+			print "Writing"
+			open('D_values.txt','w').write(return_string)
 
 	def print_param(self, display = do_display):
 		return_string = self.layers[0].print_param(display)
@@ -301,31 +314,9 @@ Arguments:
 
 
 if __name__ == "__main__":
-	# import scipy
-	# my_lam = Laminate('90_2/p40/p20/0s',2)
-	# my_lam.compute_all(method='smart')
-	# my_lam.compute_A()
-	# print my_lam.A
-	# print my_lam.a
-	# print scipy.linalg.inv(my_lam.a)
-	layup = '0_4/90_4s'
-	my_cross = Laminate(layup,1)
-	my_cross.compute_all()
-	layup = '0_2/90_2/0_2/90_2s'
-	my_cross = Laminate(layup,1)
-	my_cross.compute_all()
-	layup = '0/90/0/90/0/90/0/90s'
-	my_cross = Laminate(layup,1)
-	my_cross.compute_all()
-	# print "h = :",my_cross.total_thickness
-	# print "D11 = :", my_cross.D_vec
-	# my_cross.compute_all()
-	# print my_cross.A
-	# print my_cross.a
-
-	# print dumbtime
-	# print smarttime
-	# print smarttime/dumbtime
+	lam = Laminate('0_2/p25/0_2s',materialID = 5, core_thick = 0.01)
+	lam.compute_all()
+	
 
 
 						
