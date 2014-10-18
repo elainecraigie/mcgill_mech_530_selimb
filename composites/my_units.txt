@@ -1,0 +1,52 @@
+#reference
+meter = [length] = m = metre = meters
+second = [time] = s = sec
+ampere = [current] = A = amp
+candela = [luminosity] = cd = candle
+gram = [mass] = g
+mole = [substance] = mol
+kelvin = [temperature]; offset: 0 = K = degK
+
+#Mass
+kilogram = gram * 1000 = kg
+#Length
+mm = m/1000
+
+#Area
+[area] = [length] ** 2
+
+#Acceleration
+[acceleration] = [length] / [time] ** 2
+
+#Force
+[force] = [mass] * [acceleration]
+newton = kilogram * meter / second ** 2 = N
+kilonewton = newton * 1000 = kN
+meganewton = kilonewton * 1000 = MN
+giganewton = meganewton * 1000 = GN
+teranewton = giganewton * 1000 = TN
+
+#forcepermeter
+[forcepermeter] = [force] / [length]
+newtonpermeter  = newton / meter = Nperm
+kilonewtonpermeter  = Nm * 1000 = KNperm
+meganewtonpermeter  = KNm * 1000 = MNperm
+giganewtonpermeter  = MNm * 1000 = GNperm
+
+#Pressure
+[pressure] = [force] / [area]
+Pa = newton / meter ** 2 = pascal = pascals = PA = pa
+KPa = Pa * 1000 = KPA = kpa = kilopascal = kilopascals
+MPa = KPa * 1000 = MPA = mpa = megapascal = megapascals
+GPa = MPa * 1000 = GPA = gpa = gigapascal = gigapascals
+TPa = GPa * 1000 = TPA = tpa = terapascal = terapascals
+
+#1/Pressure
+[pressure-] = [area] / [force]
+
+#Moment
+[torque] = [force]*[length]
+Nm = newton * meter = newtonmeter
+KNm = Nm * 1000 = kilonewtonmeter
+MNm = KNm * 1000 = meganewtonmeter
+GNm = MNm * 1000 = giganewtonmeter
