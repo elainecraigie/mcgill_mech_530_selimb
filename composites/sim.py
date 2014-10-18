@@ -168,12 +168,10 @@ class Sim(object):
 																										))
 
 	def _compute_on_stress(self):
-		#Black magic
 		Q_on = self.laminate.layers[0].Q_on
 		trans = lambda x:numpy.vstack(x).T 
 		og_shape = numpy.shape(self.on_strain)
 		self.on_stress = Q_on.dot(trans(self.on_strain)).T.reshape(og_shape)
-		# print Q_on.dot(self.on_strain[-1,1])
 
 	def _compute_off_stress(self):
 		self.off_stress = numpy.empty_like(self.on_stress)
