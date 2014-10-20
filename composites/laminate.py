@@ -182,7 +182,7 @@ Arguments:
 														 [0,V3/2,V4],
 														 [0,V3/2,-V4]
 														 ])
-		vec = numpy.array([self.total_thickness,U2,U3])
+		vec = numpy.array([self.total_ply_thickness,U2,U3])
 		self.A_vec = the_array.dot(vec)
 		self.A = make_array(self.A_vec)
 		self.a = scipy.linalg.inv(self.A)
@@ -314,14 +314,18 @@ Arguments:
 
 if __name__ == "__main__":
 	import numpy
-	lam = Laminate('0_2/p25/0_2s',materialID = 5, core_thick = 0.01)
-	lam.compute_all()
-	numpy.set_printoptions(formatter = {'float_kind':lambda num: "%.5f" % num})
-	print lam.D*10**5
-	print lam.d*10**-6
-	# print lam.num_of_layers()-1
-	# print lam.num_of_layers()/2-1
-	
+	# materialID = 1
+	# layups = ['30/-30/30/-30s','-30/30/-30/30s','30_2/-30_2s']
+	# for layup in layups:
+	# 	lam = Laminate(layup,materialID)
+	# 	lam.compute_all()
+	# 	print lam.print_orientation()
+	# 	print lam.D[1,1]
+	laminate = Laminate('0_2/p25/0_2s',
+                               materialID = 5, #5
+                               core_thick = 0.01)
+	laminate.compute_all()
+
 
 
 						

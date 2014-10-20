@@ -200,6 +200,11 @@ def test_computed():
 	assert(my_lam.compute_all() == True)
 	assert(my_lam.compute_all() == False)
 
+def test_A_core():
+	no_core_lam = Laminate('90_2/p40/p20/0s',2,0.0,True)
+	w_core_lam  = Laminate('90_2/p40/p20/0s',2,0.3,True)
+	array_assert(no_core_lam.A,w_core_lam.A)
+	array_assert(no_core_lam.a,w_core_lam.a)
 
 
 
