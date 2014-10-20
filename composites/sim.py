@@ -197,7 +197,7 @@ class Sim(object):
 		self._compute_off_stress()
 		self.solved = True
 
-	def return_results(self):
+	def return_results(self, in_latex = True):
 		if not self.solved:
 			self.solve()
 
@@ -217,12 +217,19 @@ class Sim(object):
                    							)),
                 			decimals = 4
                 			)
-		make_columns = lambda *args: [stex('$%s$'%arg) for arg in args]
-		columns = make_columns('\epsilon_1','\epsilon_2','\epsilon_6',
-                       '\epsilon_x','\epsilon_y','\epsilon_s',
-                       '\sigma_1','\sigma_2','\sigma_6')
-		# columns.append('Ply Number')
-		rows = [ stex('%i (%i$^\circ$) - %s' % (layer.index,layer.theta,pos)) \
+		if in_latex:
+			make_columns = lambda *args: [stex('$%s$'%arg) for arg in args]
+			columns = make_columns('\epsilon_1','\epsilon_2','\epsilon_6',
+	                       '\epsilon_x','\epsilon_y','\epsilon_s',
+	                       '\sigma_x','\sigma_y','\sigma_s')
+			# columns.append('Ply Number')
+			rows = [ stex('%i (%i$^\circ$) - %s' % (layer.index,layer.theta,pos)) \
+					 for layer in self.laminate.layers for pos in ['Bot','Top']]
+		else:
+			columns = ('epsilon_1','epsilon_2','epsilon_6',
+	               'epsilon_x','epsilon_y','epsilon_s',
+	               'sigma_x','sigma_y','sigma_s')
+			rows = [ '%i (%i) - %s' % (layer.index,layer.theta,pos) \
 					 for layer in self.laminate.layers for pos in ['Bot','Top']]
 					 
 		d_onstrain = pd.DataFrame(data = stacks
@@ -246,14 +253,8 @@ class Sim(object):
 if __name__ == '__main__':
 	# sigma_on = transform_strain([0.0659,-0.0471,-0.0832],'off',30, do_debug = True)
 	# print sigma_on
-	my_sim = Sim(layup = '0_4/90_4s',materialID = 1)
-	P = -100 * ureg.N
-	L = 0.1 * ureg.meter
-	b = 0.01 * ureg.meter
-	moment = P*L/(4*b)
-	M = Q_([moment.magnitude,0,0],moment.units)
-	k,e = my_sim.apply_M(M,do_return = True)
-	print e[-1,1,:]
-	sigma_manual = my_sim.laminate.layers[-1].Q_on.dot(e[-1,1,:])
-	print sigma_manual
-
+	sim = Sim(laminate = Laminate('0/20/0/-20s',1))
+	sim.apply_N([1,0,0]*ureg.GNperm)
+	sim.solve()
+	df =  sim.return_results(False)
+	print df['sigma_x'],df['sigma_y'],df['sigma_s']
