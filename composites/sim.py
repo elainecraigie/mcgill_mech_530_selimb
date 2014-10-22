@@ -80,7 +80,13 @@ def transform_strain(values,input_axis,angle, do_debug = False):
 	ret_array = A.dot(b)
 	return ret_array
 
+class WorkflowError(Exception):
+	"""WorkflowError"""
+	pass
+		
 class Sim(object):
+
+	WorkflowError = WorkflowError
 	def __init__(self, **kwargs):
 		"""Simulation interface. 
 		Used to apply loads on laminate and compute resulting strains/stresses. 
@@ -119,7 +125,6 @@ class Sim(object):
 		Load N must be 3-dimensional AND use units [Force/length].
 		Converts to GN/m.
 		"""
-		print type(N_input)
 		try:
 			N = numpy.array(N_input,dtype=float).reshape(3,)
 			
@@ -214,8 +219,7 @@ class Sim(object):
 		given by apply_N and apply_M
 		"""
 		if not self.loaded:
-			print "Nothing to solve. Apply loads before solving."
-			return
+			raise WorkflowError("Nothing to solve. Apply loads before solving.")
 
 		self._compute_off_strain()
 		self._compute_on_strain()
@@ -230,11 +234,9 @@ class Sim(object):
 		Since only stress is used for failure theory, not necessary to create
 		return methods for other quantities.
 		"""
-		if not self.solved():
-			print "Must solve first. Apply loads and execute Sim.solve()"
-			return
+		if not self.solved:
+			raise WorkflowError ("Must solve first. Apply loads and solve() first.")
 
-		print numpy.shape(self.on_stress)
 		return Q_(self.on_stress,'GPa')
 
 	def return_results(self, in_latex = True):
@@ -244,7 +246,10 @@ class Sim(object):
 		"""
 
 		if not self.solved:
-			self.solve()
+			try:
+				self.solve()
+			except WorkflowError:
+				raise WorkflowError("Loads must be applied first.")
 
 		import numpy as np
 		import pandas as pd
@@ -293,6 +298,13 @@ class Sim(object):
 		return d_onstrain
 		# return pd.concat(pieces,keys = rows)
 			
+def make_test_sim():
+	layup = '0/90'; matID = 1
+	a_sim = Sim(layup = layup,materialID = matID)
+	a_sim.apply_N([1,0,0]*ureg.Nperm)
+	a_sim.solve()
+	return a_sim
+
 if __name__ == '__main__':
 	# sigma_on = transform_strain([0.0659,-0.0471,-0.0832],'off',30, do_debug = True)
 	# print sigma_on

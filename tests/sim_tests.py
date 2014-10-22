@@ -1,5 +1,6 @@
 # from nose.tools import *
 from composites.sim import transform_stress,transform_strain, Sim, ureg, Q_
+from composites.sim import make_test_sim
 import numpy
 from numpy.testing import assert_array_almost_equal
 from composites.laminate import Laminate
@@ -225,7 +226,13 @@ def test_compute_off_stress_p96():
 def test_solve_N():
 	sim = Sim(layup = '45/90',materialID = 2)
 	assert(not sim.solved)
-	sim.solve()
+	try:
+		sim.solve()
+	except sim.WorkflowError:
+		pass
+	else:
+		raise AssertionError("""Did not get a WorkflowError when solving 
+			before applying""")
 	assert(not sim.solved)
 	sim.apply_N([500,500,500]*ureg.MNperm)
 	sim.solve()
@@ -234,7 +241,13 @@ def test_solve_N():
 def test_solve_M():
 	sim = Sim(layup = '45/90',materialID = 2)
 	assert(not sim.solved)
-	sim.solve()
+	try:
+		sim.solve()
+	except sim.WorkflowError:
+		pass
+	else:
+		raise AssertionError("""Did not get a WorkflowError when solving 
+			before applying""")
 	assert(not sim.solved)
 	sim.apply_M([500,500,500]*ureg.MN)
 	sim.solve()
@@ -254,6 +267,15 @@ def test_apply_units():
 		sim.apply_M(M1)
 	except:
 		raise
+
+def test_make_test_sim():
+	sim = make_test_sim()
+	assert(sim.loaded)
+	assert(sim.solved)
+
+def test_get_stress():
+	sim = make_test_sim()
+	sim.get_stress()
 
  
 
