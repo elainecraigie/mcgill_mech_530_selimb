@@ -253,8 +253,13 @@ class Sim(object):
 if __name__ == '__main__':
 	# sigma_on = transform_strain([0.0659,-0.0471,-0.0832],'off',30, do_debug = True)
 	# print sigma_on
-	sim = Sim(laminate = Laminate('0/20/0/-20s',1))
-	sim.apply_N([1,0,0]*ureg.GNperm)
-	sim.solve()
-	df =  sim.return_results(False)
-	print df['sigma_x'],df['sigma_y'],df['sigma_s']
+	layups = ['0/90/0/90s','0/45/0/-45s','0/45/0/90s','0/-45/0/45s','p45s']
+	for layup in layups:
+		sim = Sim(laminate = Laminate(layup,1))
+		sim.apply_M([1,0,0]*ureg.GN)
+		sim.solve()
+		df =  sim.return_results(False)
+		print '----' * 10
+		print '----' * 10
+		print "layup = %s " % layup
+		print df['sigma_x'],df['sigma_y'],df['sigma_s']

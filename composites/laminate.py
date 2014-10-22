@@ -188,6 +188,7 @@ Arguments:
 		self.a = scipy.linalg.inv(self.A)
 		a = self.a
 		self.a_vec = make_vec(a)
+		self.Vstar_for_A = numpy.array([V1,V2,V3,V4],dtype = float)/self.total_ply_thickness
 
 	def _compute_D(self):
 		import numpy
@@ -215,6 +216,7 @@ Arguments:
 		self.d = scipy.linalg.inv(self.D)
 		d = self.d                      #**-6 to obtain (kNm)-1
 		self.d_vec = make_vec(d)
+		self.Vstar_for_D = numpy.array([V1,V2,V3,V4],dtype = float)/h_star
 
 		if do_debug:
 			return_string = ''
@@ -313,18 +315,50 @@ Arguments:
 
 
 if __name__ == "__main__":
-	import numpy
-	# materialID = 1
-	# layups = ['30/-30/30/-30s','-30/30/-30/30s','30_2/-30_2s']
-	# for layup in layups:
-	# 	lam = Laminate(layup,materialID)
-	# 	lam.compute_all()
-	# 	print lam.print_orientation()
-	# 	print lam.D[1,1]
-	laminate = Laminate('0_2/p25/0_2s',
-                               materialID = 5, #5
-                               core_thick = 0.01)
-	laminate.compute_all()
+	import numpy as np
+	def print_layups(input_layups):
+		for layup in input_layups:
+			lam = Laminate(layup,1,0.0,True)
+			f.write("Layup : %s \n" % layup)
+			f.write("V*'s for A :")
+			f.write("%s \n"  % lam.Vstar_for_A)
+			f.write("A* [GPa]: \n")
+			f.write("%s \n" % (lam.A/lam.total_ply_thickness))
+			f.write("a* [1/TPa]  : \n")
+			f.write("%s \n" % (lam.a*lam.total_ply_thickness*1000))
+			f.write("V*'s for D: ")
+			f.write("%s \n" % lam.Vstar_for_D) 
+			f.write("D* : [GPa] \n")
+			f.write("%s \n" % (lam.D*12/lam.total_thickness**3))
+			f.write("d* [1/TPa]  : \n")
+			f.write("%s \n" % (lam.a*lam.total_thickness*1000))
+			f.write('\n ----- \n')
+
+	np.set_printoptions(formatter = {'float_kind':lambda num:	'%.4f' % num},
+											suppress = True)
+	layups = ['0/90s',
+						'90/0/90s',
+						'0/0/90s',]
+	f = open('midterm.txt','w')
+	f.write("-------CROSS-PLY------- \n")
+	print_layups(layups)
+
+	f.write('\n -------ANGLE-PLY------- \n')
+	layups = ['0/0s',
+						'25/-25s',
+						'30/30/30/-30s',
+						'45/-45/-45s',
+						'45/-45s',
+						'p45/p45/p45s'
+						]
+	print_layups(layups)
+	f.write('\n -----WHATEVER------ \n')
+	layups = ['0/25/30/60s']
+	print_layups(layups)
+
+	f.close()
+
+
 
 
 
