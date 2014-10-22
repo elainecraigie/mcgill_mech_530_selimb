@@ -119,12 +119,18 @@ class Sim(object):
 		Load N must be 3-dimensional AND use units [Force/length].
 		Converts to GN/m.
 		"""
+		print type(N_input)
 		try:
 			N = numpy.array(N_input,dtype=float).reshape(3,)
-			self.e0 = self.laminate.a.dot(N)
+			
 		except ValueError:
-			raise ValueError("Could not reshape %r to a 'float' 3D array" % N_input)
+			try:
+				N = numpy.array([N_input,0,0],dtype=float).reshape(3,)
+			except:
+				# raise ValueError("Could not reshape %r to a 'float' 3D array" % N_input)
+				raise
 
+		self.e0 = self.laminate.a.dot(N)
 		self.loaded = True
 		if do_return:
 
@@ -138,9 +144,13 @@ class Sim(object):
 		"""
 		try:
 			M = numpy.array(M_input,dtype=float).reshape(3,)
-			self.k = self.laminate.d.dot(M)
 		except ValueError:
-			raise ValueError("Could not reshape %r to a 'float' 3D array" % M_input)
+			try:
+				M = numpy.array([M_input,0,0],dtype=float).reshape(3,)
+			except:
+				raise ValueError("Could not reshape %r to a 'float' 3D array" % M_input)
+
+		self.k = self.laminate.d.dot(M)
 
 		self.e_k = numpy.empty((self.laminate.num_of_layers(),2,3), dtype = float)
 		for layer in self.laminate.layers:
@@ -213,6 +223,20 @@ class Sim(object):
 		self._compute_off_stress()
 		self.solved = True
 
+	def get_stress(self):
+		"""Returns stress (with units) as ndarray of shape (n,2,3) where n is the 
+		number of plies in the laminate.
+
+		Since only stress is used for failure theory, not necessary to create
+		return methods for other quantities.
+		"""
+		if not self.solved():
+			print "Must solve first. Apply loads and execute Sim.solve()"
+			return
+
+		print numpy.shape(self.on_stress)
+		return Q_(self.on_stress,'GPa')
+
 	def return_results(self, in_latex = True):
 		"""Return results as a pandas DataFrame object
 
@@ -277,8 +301,4 @@ if __name__ == '__main__':
 		sim = Sim(laminate = Laminate(layup,1))
 		sim.apply_M([1,0,0]*ureg.GN)
 		sim.solve()
-		df =  sim.return_results(False)
-		print '----' * 10
-		print '----' * 10
-		print "layup = %s " % layup
-		print df['sigma_x'],df['sigma_y'],df['sigma_s']
+		sim.return_stress()

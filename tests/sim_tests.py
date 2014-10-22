@@ -240,6 +240,23 @@ def test_solve_M():
 	sim.solve()
 	assert(sim.solved)
 
+def test_apply_units():
+	sim = Sim(layup = '45/90',materialID = 2)
+	P = Q_(1000,'N'); b = Q_(0.11,'m'); L = Q_(0.51,'m')
+	M1 = -P*L/(4*b); N1 = 0.5*P/b;
+	M = Q_([M1.magnitude,0,0],M1.units)
+	N = Q_([N1.magnitude,0,0],N1.units)
+	print type(N1)
+	try:
+		sim.apply_M(M) 
+		sim.apply_N(N) 
+		sim.apply_N(N1)
+		sim.apply_M(M1)
+	except:
+		raise
+
+ 
+
 
 
 

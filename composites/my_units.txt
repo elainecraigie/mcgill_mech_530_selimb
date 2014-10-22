@@ -29,9 +29,9 @@ teranewton = giganewton * 1000 = TN
 #forcepermeter
 [forcepermeter] = [force] / [length]
 newtonpermeter  = newton / meter = Nperm
-kilonewtonpermeter  = Nm * 1000 = KNperm
-meganewtonpermeter  = KNm * 1000 = MNperm
-giganewtonpermeter  = MNm * 1000 = GNperm
+kilonewtonpermeter  = Nperm * 1000 = KNperm
+meganewtonpermeter  = KNperm * 1000 = MNperm
+giganewtonpermeter  = MNperm * 1000 = GNperm
 
 #Pressure
 [pressure] = [force] / [area]
