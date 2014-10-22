@@ -237,7 +237,7 @@ class Sim(object):
 		if not self.solved:
 			raise WorkflowError ("Must solve first. Apply loads and solve() first.")
 
-		return Q_(self.on_stress,'GPa')
+		return self.on_stress
 
 	def return_results(self, in_latex = True):
 		"""Return results as a pandas DataFrame object
