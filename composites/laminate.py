@@ -334,30 +334,6 @@ if __name__ == "__main__":
 			f.write("%s \n" % (lam.a*lam.total_thickness*1000))
 			f.write('\n ----- \n')
 
-	np.set_printoptions(formatter = {'float_kind':lambda num:	'%.4f' % num},
-											suppress = True)
-	layups = ['0/90s',
-						'90/0/90s',
-						'0/0/90s',]
-	f = open('midterm.txt','w')
-	f.write("-------CROSS-PLY------- \n")
-	print_layups(layups)
-
-	f.write('\n -------ANGLE-PLY------- \n')
-	layups = ['0/0s',
-						'25/-25s',
-						'30/30/30/-30s',
-						'45/-45/-45s',
-						'45/-45s',
-						'p45/p45/p45s'
-						]
-	print_layups(layups)
-	f.write('\n -----WHATEVER------ \n')
-	layups = ['0/25/30/60s']
-	print_layups(layups)
-
-	f.close()
-
 
 
 

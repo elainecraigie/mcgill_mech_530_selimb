@@ -1,9 +1,7 @@
 """Provides:
   o functions to transform strain/stress from off-axis to on-axis 
-		and vice-versa..
-	o Sim class used to apply loads on laminate
-
-Transforms strain/stress from off-axis to on-axis and vice-versa.
+			and vice-versa..
+	o Sim interface class.
 """
 import numpy
 from math import cos,sin,radians
@@ -84,6 +82,16 @@ def transform_strain(values,input_axis,angle, do_debug = False):
 
 class Sim(object):
 	def __init__(self, **kwargs):
+		"""Simulation interface. 
+		Used to apply loads on laminate and compute resulting strains/stresses. 
+
+		Workflow : 
+			- sim = Sim(laminate = Laminate(...))
+			- sim.apply_N([a,b,c] * ureg.GNperm)
+			- sim.apply_M([d,e,f] * ureg.GN)
+			- sim.solve()
+			- sim.return_results()
+		"""
 		# if isinstance(laminate,Laminate):
 		# 	self.laminate = laminate
 		# else:
@@ -108,7 +116,8 @@ class Sim(object):
 	@ureg.wraps(None, (None,ureg.GNperm))
 	def apply_N(self,N_input,do_return = False):
 		"""Obtain off-axis strain from applied 3D average load N to laminate.
-		Load N must be 3-dimensional AND use units.
+		Load N must be 3-dimensional AND use units [Force/length].
+		Converts to GN/m.
 		"""
 		try:
 			N = numpy.array(N_input,dtype=float).reshape(3,)
@@ -123,6 +132,10 @@ class Sim(object):
 
 	@ureg.wraps(None, (None,ureg.GN,None))
 	def apply_M(self,M_input,do_return = False):
+		"""Apply moment M to laminate.
+		Moment M must be 3-dimensional AND use units [Force].
+		Converts to GN.
+		"""
 		try:
 			M = numpy.array(M_input,dtype=float).reshape(3,)
 			self.k = self.laminate.d.dot(M)
@@ -187,6 +200,9 @@ class Sim(object):
 																										))
 
 	def solve(self):
+		"""Solve for the laminate strains/stresses due to applied N and M
+		given by apply_N and apply_M
+		"""
 		if not self.loaded:
 			print "Nothing to solve. Apply loads before solving."
 			return
@@ -198,14 +214,17 @@ class Sim(object):
 		self.solved = True
 
 	def return_results(self, in_latex = True):
+		"""Return results as a pandas DataFrame object
+
+		in_latex : Returns column and indices as latex strings (default True).
+		"""
+
 		if not self.solved:
 			self.solve()
 
 		import numpy as np
 		import pandas as pd
 		import sympy
-		from sympy import latex as stex
-
 
 		off_strain = np.vstack(self.off_strain) 
 		on_strain = np.vstack(self.on_strain)
@@ -218,12 +237,12 @@ class Sim(object):
                 			decimals = 4
                 			)
 		if in_latex:
-			make_columns = lambda *args: [stex('$%s$'%arg) for arg in args]
+			make_columns = lambda *args: [sympy.latex('$%s$'%arg) for arg in args]
 			columns = make_columns('\epsilon_1','\epsilon_2','\epsilon_6',
 	                       '\epsilon_x','\epsilon_y','\epsilon_s',
 	                       '\sigma_x','\sigma_y','\sigma_s')
 			# columns.append('Ply Number')
-			rows = [ stex('%i (%i$^\circ$) - %s' % (layer.index,layer.theta,pos)) \
+			rows = [ sympy.latex('%i (%i$^\circ$) - %s' % (layer.index,layer.theta,pos)) \
 					 for layer in self.laminate.layers for pos in ['Bot','Top']]
 		else:
 			columns = ('epsilon_1','epsilon_2','epsilon_6',
