@@ -22,3 +22,7 @@ Assignments
 [Assignment 1](http://bit.ly/selimb_HW1_mech530)
 
 [Assignment 2](http://bit.ly/selimb_HW2_mech530)
+
+[Assignment 3](http://bit.ly/selimb_HW3_mech530)
+
+[Assignment 4](http://bit.ly/selimb_HW4_mech530)
